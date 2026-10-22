@@ -30,6 +30,12 @@ export default async function AdminPage() {
         >
           📣 Manage announcements →
         </Link>
+                <Link
+          href="/admin/events"
+          className="ml-3 mt-6 inline-block rounded-full bg-red-600 px-5 py-2 text-sm font-semibold hover:bg-red-500"
+        >
+          🗓️ Manage events →
+        </Link>
           Create or reset player logins. Send each player their username and
           password privately (for example on WeChat).
         </p>
