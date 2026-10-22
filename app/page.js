@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-neutral-950 px-6 text-center text-white">
-      <div className="text-7xl">🦁</div>
+      <div className="text-7xl"> ☆ 🦁 ☆</div>
       <h1 className="mt-4 text-5xl font-black tracking-tight">
         RED <span className="text-red-600">LIONS</span>
       </h1>
@@ -19,6 +19,9 @@ export default function Home() {
       </Link>
       <Link href="/news" className="mt-4 text-sm text-neutral-400 hover:text-white">
         Latest news →
+      </Link>
+      <Link href="/fixtures" className="mt-2 text-sm text-neutral-400 hover:text-white">
+        Fixtures & results →
       </Link>
       <Link href="/login" className="mt-2 text-sm text-neutral-400 hover:text-white">
         Players&apos; login →

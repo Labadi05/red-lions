@@ -52,6 +52,43 @@ export default function EventForm({ event }) {
       <label className="mt-4 block text-sm text-neutral-400">Notes (optional)</label>
       <textarea name="notes" rows={3} defaultValue={event?.notes ?? ""} className={input} />
 
+      <div className="mt-6 rounded-lg border border-neutral-800 p-4">
+        <p className="text-sm font-semibold text-red-500">⚽ Match details (matches only)</p>
+
+        <label className="mt-3 block text-sm text-neutral-400">Opponent</label>
+        <input
+          name="opponent"
+          placeholder="e.g. Dragons FC"
+          defaultValue={event?.opponent ?? ""}
+          className={input}
+        />
+
+        <p className="mt-4 text-sm text-neutral-400">
+          Final score (fill in after the match, leave empty before)
+        </p>
+        <div className="mt-1 flex items-center gap-3">
+          <input
+            type="number"
+            name="score_for"
+            min="0"
+            max="99"
+            placeholder="Red Lions"
+            defaultValue={event?.score_for ?? ""}
+            className="w-28 rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 outline-none focus:border-red-600"
+          />
+          <span className="text-neutral-500">–</span>
+          <input
+            type="number"
+            name="score_against"
+            min="0"
+            max="99"
+            placeholder="Opponent"
+            defaultValue={event?.score_against ?? ""}
+            className="w-28 rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 outline-none focus:border-red-600"
+          />
+        </div>
+      </div>
+
       {state?.error && <p className="mt-4 text-sm text-red-400">{state.error}</p>}
 
       <button

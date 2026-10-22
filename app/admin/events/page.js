@@ -42,6 +42,11 @@ function EventCard({ e }) {
         <span className="font-semibold">{e.title}</span>
         <span className="text-sm text-neutral-400">{formatWhen(e.starts_at)}</span>
         {e.location && <span className="text-sm text-neutral-500">📍 {e.location}</span>}
+              {e.score_for !== null && e.score_against !== null && (
+          <span className="rounded-full bg-neutral-800 px-3 py-0.5 text-sm font-bold">
+            {e.score_for} – {e.score_against}
+          </span>
+        )}
       </div>
       {e.notes && (
         <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-300">{e.notes}</p>
