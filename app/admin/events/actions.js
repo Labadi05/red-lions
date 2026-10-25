@@ -68,6 +68,7 @@ export async function deleteEvent(formData) {
   await requireAdmin();
   const id = Number(formData.get("id"));
   db.prepare("DELETE FROM attendance WHERE event_id = ?").run(id);
+  db.prepare("DELETE FROM match_stats WHERE event_id = ?").run(id);
   db.prepare("DELETE FROM events WHERE id = ?").run(id);
 
   revalidatePath("/portal");

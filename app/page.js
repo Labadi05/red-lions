@@ -23,6 +23,9 @@ export default function Home() {
       <Link href="/fixtures" className="mt-2 text-sm text-neutral-400 hover:text-white">
         Fixtures & results →
       </Link>
+      <Link href="/stats" className="mt-2 text-sm text-neutral-400 hover:text-white">
+        Player stats →
+      </Link>
       <Link href="/login" className="mt-2 text-sm text-neutral-400 hover:text-white">
         Players&apos; login →
       </Link>

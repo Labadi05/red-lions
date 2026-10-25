@@ -86,6 +86,14 @@ function EventCard({ e }) {
             📋 Lineup {e.lineup_published === 1 ? "(published)" : ""}
           </Link>
         )}
+                {e.type === "match" && (
+          <Link
+            href={`/admin/events/${e.id}/stats`}
+            className="rounded-lg border border-neutral-700 px-3 py-1 text-xs hover:border-red-600"
+          >
+            📊 Stats
+          </Link>
+        )}
         <CopyButton text={shareText} />
         <form action={deleteEvent} className="ml-auto">
           <input type="hidden" name="id" value={e.id} />
