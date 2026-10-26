@@ -70,6 +70,7 @@ export async function deleteEvent(formData) {
   db.prepare("DELETE FROM attendance WHERE event_id = ?").run(id);
   db.prepare("DELETE FROM match_stats WHERE event_id = ?").run(id);
   db.prepare("DELETE FROM events WHERE id = ?").run(id);
+  db.prepare("DELETE FROM checkins WHERE event_id = ?").run(id);
 
   revalidatePath("/portal");
   revalidatePath("/fixtures");

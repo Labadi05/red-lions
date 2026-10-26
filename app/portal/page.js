@@ -6,6 +6,7 @@ import { TYPES, formatWhen, nowInJinzhou } from "@/lib/format";
 import Pitch from "@/components/Pitch";
 import { logout } from "../login/actions";
 import { setAttendance } from "./actions";
+import { getMyAttendance, rateColor } from "@/lib/attendance";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,7 @@ export default async function PortalPage() {
     )
     .all(session.uid, nowInJinzhou());
 
+  const mine = getMyAttendance(session.uid);
   const playersById = Object.fromEntries(
     db.prepare("SELECT id, number, name FROM players").all().map((p) => [p.id, p])
   );
@@ -148,6 +150,75 @@ export default async function PortalPage() {
             </div>
           ))}
         </div>
+        <h2 className="mt-10 text-xl font-semibold text-red-500">My attendance 📈</h2>
+        <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
+          {!mine.summary ? (
+            <p className="text-neutral-500">
+              Your attendance will show here once the captain has checked in some events.
+            </p>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-end gap-8">
+                <div>
+                  <div className={`text-5xl font-black ${rateColor(mine.summary.rate)}`}>
+                    {mine.summary.rate}%
+                  </div>
+                  <div className="text-xs text-neutral-400">attendance rate</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">
+                    {mine.summary.attended}/{mine.summary.events}
+                  </div>
+                  <div className="text-xs text-neutral-400">events attended</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{mine.summary.responseRate}%</div>
+                  <div className="text-xs text-neutral-400">replies given</div>
+                </div>
+                <div>
+                  <div
+                    className={`text-2xl font-bold ${
+                      mine.summary.no_shows > 0 ? "text-red-400" : ""
+                    }`}
+                  >
+                    {mine.summary.no_shows}
+                  </div>
+                  <div className="text-xs text-neutral-400">no-shows</div>
+                </div>
+              </div>
+
+
+              <div className="mt-5 space-y-2">
+                {mine.history.map((h, i) => (
+                  <div key={i} className="flex items-center gap-3 text-sm">
+                    <span>{TYPES[h.type].icon}</span>
+                    <span className="flex-1 truncate">{h.title}</span>
+                    <span className="text-xs text-neutral-500">{formatWhen(h.starts_at)}</span>
+                    <span className="text-xs text-neutral-500">
+                      {h.status === "yes"
+                        ? "said ✅"
+                        : h.status === "maybe"
+                        ? "said ❓"
+                        : h.status === "no"
+                        ? "said ❌"
+                        : "no reply"}
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        h.attended
+                          ? "bg-green-900 text-green-300"
+                          : "bg-red-900 text-red-300"
+                      }`}
+                    >
+                      {h.attended ? "Came" : "Missed"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
 
         <h2 className="mt-10 text-xl font-semibold text-red-500">Announcements</h2>
         <div className="mt-4 space-y-3">

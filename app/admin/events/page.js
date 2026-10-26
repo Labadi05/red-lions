@@ -77,6 +77,13 @@ function EventCard({ e }) {
         >
           Edit
         </Link>
+
+                <Link
+          href={`/admin/events/${e.id}/checkin`}
+          className="rounded-lg border border-neutral-700 px-3 py-1 text-xs hover:border-red-600"
+        >
+          ✔️ Check-in
+        </Link>
         
                 {e.type === "match" && (
           <Link

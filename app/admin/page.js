@@ -1,12 +1,24 @@
 import Link from "next/link";
 import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { getRanking, rateColor } from "@/lib/attendance";
 import AccountForm from "./AccountForm";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
+const FILTERS = [
+  ["all", "All events"],
+  ["training", "🏃 Trainings"],
+  ["match", "⚽ Matches"],
+  ["meeting", "🗣️ Meetings"],
+];
+
+export default async function AdminPage({ searchParams }) {
   await requireAdmin();
+  const { type } = await searchParams;
+  const active = FILTERS.some(([key]) => key === type) ? type : "all";
+
+  const ranking = getRanking(active);
 
   const players = db
     .prepare(
@@ -16,6 +28,9 @@ export default async function AdminPage() {
     )
     .all();
 
+  const linkStyle =
+    "rounded-full bg-red-600 px-5 py-2 text-sm font-semibold hover:bg-red-500";
+
   return (
     <main className="min-h-screen bg-neutral-950 px-6 py-12 text-white">
       <div className="mx-auto max-w-4xl">
@@ -23,24 +38,91 @@ export default async function AdminPage() {
           ← Portal
         </Link>
         <h1 className="mt-4 text-4xl font-bold">Captain&apos;s Dashboard 🦁</h1>
-        <p className="mt-2 text-neutral-400">
-                  <Link
-          href="/admin/news"
-          className="mt-6 inline-block rounded-full bg-red-600 px-5 py-2 text-sm font-semibold hover:bg-red-500"
-        >
-          📣 Manage announcements →
-        </Link>
-                <Link
-          href="/admin/events"
-          className="ml-3 mt-6 inline-block rounded-full bg-red-600 px-5 py-2 text-sm font-semibold hover:bg-red-500"
-        >
-          🗓️ Manage events →
-        </Link>
-          Create or reset player logins. Send each player their username and
-          password privately (for example on WeChat).
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link href="/admin/news" className={linkStyle}>
+            📣 Announcements
+          </Link>
+          <Link href="/admin/events" className={linkStyle}>
+            🗓️ Events
+          </Link>
+        </div>
+
+        <h2 className="mt-12 text-xl font-semibold text-red-500">Attendance ranking 📈</h2>
+        <p className="mt-1 text-sm text-neutral-400">
+          Only events you have checked in count. No-show = said &quot;Coming&quot; but
+          did not come.
         </p>
 
-        <h2 className="mt-10 text-xl font-semibold text-red-500">Player accounts</h2>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {FILTERS.map(([key, label]) => (
+            <Link
+              key={key}
+              href={key === "all" ? "/admin" : `/admin?type=${key}`}
+              className={`rounded-full border px-4 py-1.5 text-sm ${
+                active === key
+                  ? "border-red-600 bg-red-600 font-semibold"
+                  : "border-neutral-700 hover:border-red-600"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+
+        {ranking.length === 0 ? (
+          <p className="mt-6 text-neutral-500">
+            No data yet. Open <span className="text-neutral-300">Events</span> and use
+            ✔️ Check-in on a past event.
+          </p>
+        ) : (
+          <div className="mt-6 overflow-x-auto rounded-xl border border-neutral-800">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead className="bg-neutral-900 text-xs uppercase text-neutral-400">
+                <tr>
+                  <th className="px-3 py-3 text-left">#</th>
+                  <th className="px-3 py-3 text-left">Player</th>
+                  <th className="px-3 py-3 text-center">Events</th>
+                  <th className="px-3 py-3 text-center">Came</th>
+                  <th className="px-3 py-3 text-center">Rate</th>
+                  <th className="px-3 py-3 text-center">Replied</th>
+                  <th className="px-3 py-3 text-center">No-shows</th>
+                  <th className="px-3 py-3 text-center">Declined</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ranking.map((r, i) => (
+                  <tr key={r.id} className="border-t border-neutral-800">
+                    <td className="px-3 py-3 text-neutral-500">{i + 1}</td>
+                    <td className="px-3 py-3">
+                      <span className="font-black text-red-600">{r.number}</span> {r.name}
+                    </td>
+                    <td className="px-3 py-3 text-center">{r.events}</td>
+                    <td className="px-3 py-3 text-center">{r.attended}</td>
+                    <td className={`px-3 py-3 text-center font-bold ${rateColor(r.rate)}`}>
+                      {r.rate}%
+                    </td>
+                    <td className="px-3 py-3 text-center">{r.responseRate}%</td>
+                    <td
+                      className={`px-3 py-3 text-center ${
+                        r.no_shows > 0 ? "font-semibold text-red-400" : "text-neutral-500"
+                      }`}
+                    >
+                      {r.no_shows}
+                    </td>
+                    <td className="px-3 py-3 text-center text-neutral-400">{r.declined}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <h2 className="mt-14 text-xl font-semibold text-red-500">Player accounts</h2>
+        <p className="mt-1 text-sm text-neutral-400">
+          Create or reset player logins. Send each player their username and password
+          privately (for example on WeChat).
+        </p>
         <div className="mt-4 space-y-3">
           {players.map((p) => (
             <div
