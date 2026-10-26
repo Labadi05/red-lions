@@ -98,8 +98,8 @@ data/           SQLite database (not committed)
 - [x] Events, attendance, check-in and attendance ranking
 - [x] Lineups, match results and match stats
 - [x] Polls and voting
-- [ ] Social media links and contact page
-- [ ] Photo and video gallery
+- [x] Social media links and contact page
+- [x] Photo and video gallery
 - [ ] Players can change their own password
 - [ ] Deployment on a Hong Kong server with HTTPS (China-friendly hosting) and backups
 - [ ] Automatic WeChat notifications
