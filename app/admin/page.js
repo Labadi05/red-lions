@@ -19,6 +19,9 @@ export default async function AdminPage({ searchParams }) {
   const active = FILTERS.some(([key]) => key === type) ? type : "all";
 
   const ranking = getRanking(active);
+    const newFeedback = db
+    .prepare("SELECT COUNT(*) AS n FROM feedback WHERE status = 'new'")
+    .get().n;
 
   const players = db
     .prepare(
@@ -54,6 +57,12 @@ export default async function AdminPage({ searchParams }) {
           </Link>
            <Link href="/admin/media" className={linkStyle}>
             📸 Gallery
+          </Link>
+                    <Link href="/admin/messages" className={linkStyle}>
+            📬 Messages
+          </Link>
+          <Link href="/admin/feedback" className={linkStyle}>
+            💡 Feedback{newFeedback > 0 ? ` (${newFeedback} new)` : ""}
           </Link>
         </div>
 

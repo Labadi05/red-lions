@@ -8,6 +8,7 @@ import { logout } from "../login/actions";
 import { setAttendance, vote } from "./actions";
 import { getPolls } from "@/lib/polls";
 import { getMyAttendance, rateColor } from "@/lib/attendance";
+import { getUnreadCount } from "@/lib/messages";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export default async function PortalPage() {
     ...allPolls.filter((p) => p.closed).slice(0, 3),
   ];
 
+  const unread = getUnreadCount(session.uid);
   const mine = getMyAttendance(session.uid);
   const playersById = Object.fromEntries(
     db.prepare("SELECT id, number, name FROM players").all().map((p) => [p.id, p])
@@ -75,6 +77,17 @@ export default async function PortalPage() {
           className="mt-4 inline-block rounded-full border border-neutral-700 px-5 py-2 text-sm hover:border-red-600"
         >
           📸 Gallery
+        </Link>
+
+        <Link
+          href="/portal/inbox"
+          className={`ml-2 mt-4 inline-block rounded-full border px-5 py-2 text-sm ${
+            unread > 0
+              ? "border-red-600 bg-red-600 font-semibold"
+              : "border-neutral-700 hover:border-red-600"
+          }`}
+        >
+          📬 Inbox{unread > 0 ? ` (${unread} new)` : ""}
         </Link>
 
         <h2 className="mt-10 text-xl font-semibold text-red-500">Upcoming</h2>
