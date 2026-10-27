@@ -49,6 +49,9 @@ export default async function AdminPage({ searchParams }) {
           <Link href="/admin/polls" className={linkStyle}>
             🗳️ Polls
           </Link>
+         <Link href="/admin/settings" className={linkStyle}>
+            ⚙️ Site info
+          </Link>
         </div>
 
         <h2 className="mt-12 text-xl font-semibold text-red-500">Attendance ranking 📈</h2>
