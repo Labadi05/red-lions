@@ -100,7 +100,7 @@ data/           SQLite database (not committed)
 - [x] Polls and voting
 - [x] Social media links and contact page
 - [x] Photo and video gallery
-- [ ] Players can change their own password
+- [x] Private messages, tasks and player suggestions
 - [ ] Deployment on a Hong Kong server with HTTPS (China-friendly hosting) and backups
 - [ ] Automatic WeChat notifications
 
