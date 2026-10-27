@@ -6,6 +6,7 @@ const links = [
   ["/fixtures", "Fixtures & results"],
   ["/stats", "Player stats"],
   ["/contact", "Contact"],
+  ["/gallery", "Gallery"],
 ];
 
 export default function Home() {

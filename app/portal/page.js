@@ -70,6 +70,13 @@ export default async function PortalPage() {
           </Link>
         )}
 
+          <Link
+          href="/gallery"
+          className="mt-4 inline-block rounded-full border border-neutral-700 px-5 py-2 text-sm hover:border-red-600"
+        >
+          📸 Gallery
+        </Link>
+
         <h2 className="mt-10 text-xl font-semibold text-red-500">Upcoming</h2>
         <div className="mt-4 space-y-3">
           {events.length === 0 && (

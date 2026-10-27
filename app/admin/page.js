@@ -52,6 +52,9 @@ export default async function AdminPage({ searchParams }) {
          <Link href="/admin/settings" className={linkStyle}>
             ⚙️ Site info
           </Link>
+           <Link href="/admin/media" className={linkStyle}>
+            📸 Gallery
+          </Link>
         </div>
 
         <h2 className="mt-12 text-xl font-semibold text-red-500">Attendance ranking 📈</h2>
