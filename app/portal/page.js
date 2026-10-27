@@ -5,7 +5,8 @@ import { getSession } from "@/lib/session";
 import { TYPES, formatWhen, nowInJinzhou } from "@/lib/format";
 import Pitch from "@/components/Pitch";
 import { logout } from "../login/actions";
-import { setAttendance } from "./actions";
+import { setAttendance, vote } from "./actions";
+import { getPolls } from "@/lib/polls";
 import { getMyAttendance, rateColor } from "@/lib/attendance";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,12 @@ export default async function PortalPage() {
        ORDER BY e.starts_at ASC`
     )
     .all(session.uid, nowInJinzhou());
+
+  const allPolls = getPolls(session.uid);
+  const polls = [
+    ...allPolls.filter((p) => !p.closed),
+    ...allPolls.filter((p) => p.closed).slice(0, 3),
+  ];
 
   const mine = getMyAttendance(session.uid);
   const playersById = Object.fromEntries(
@@ -150,6 +157,91 @@ export default async function PortalPage() {
             </div>
           ))}
         </div>
+
+        <h2 className="mt-10 text-xl font-semibold text-red-500">Polls 🗳️</h2>
+        <div className="mt-4 space-y-3">
+          {polls.length === 0 && <p className="text-neutral-500">No polls right now.</p>}
+          {polls.map((poll) => (
+            <div
+              key={poll.id}
+              className="rounded-xl border border-neutral-800 bg-neutral-900 p-5"
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-lg font-semibold">{poll.question}</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs ${
+                    poll.closed
+                      ? "bg-neutral-700 text-neutral-300"
+                      : "bg-green-900 text-green-300"
+                  }`}
+                >
+                  {poll.closed
+                    ? "Closed"
+                    : poll.closes_at
+                    ? `Vote before ${formatWhen(poll.closes_at)}`
+                    : "Open"}
+                </span>
+              </div>
+
+              {!poll.closed && (
+                <form action={vote} className="mt-4 flex flex-wrap gap-2">
+                  <input type="hidden" name="pollId" value={poll.id} />
+                  {poll.options.map((o) => (
+                    <button
+                      key={o.id}
+                      name="optionId"
+                      value={o.id}
+                      className={`rounded-lg border px-4 py-2 text-sm ${
+                        poll.myVote === o.id
+                          ? "border-red-600 bg-red-600 font-semibold"
+                          : "border-neutral-700 hover:border-red-600"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </form>
+              )}
+
+              {!poll.closed && poll.myVote && (
+                <p className="mt-2 text-xs text-neutral-500">
+                  You can change your vote until the poll closes.
+                </p>
+              )}
+              {!poll.closed && !poll.myVote && (
+                <p className="mt-2 text-xs text-neutral-500">
+                  Results appear after you vote.
+                </p>
+              )}
+
+              {(poll.closed || poll.myVote) && (
+                <div className="mt-4 space-y-3">
+                  {poll.options.map((o) => {
+                    const pct = poll.total ? Math.round((100 * o.count) / poll.total) : 0;
+                    return (
+                      <div key={o.id}>
+                        <div className="flex items-center justify-between text-sm">
+                          <span>{o.label}</span>
+                          <span className="text-neutral-400">
+                            {o.count} · {pct}%
+                          </span>
+                        </div>
+                        <div className="mt-1 h-2 overflow-hidden rounded-full bg-neutral-800">
+                          <div className="h-full bg-red-600" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <p className="text-xs text-neutral-500">
+                    {poll.total} vote{poll.total === 1 ? "" : "s"}
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+
         <h2 className="mt-10 text-xl font-semibold text-red-500">My attendance 📈</h2>
         <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
           {!mine.summary ? (

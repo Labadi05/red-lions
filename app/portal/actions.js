@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import db from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { nowInJinzhou } from "@/lib/format";
 
 export async function setAttendance(formData) {
   const session = await getSession();
@@ -28,4 +29,31 @@ export async function setAttendance(formData) {
 
   revalidatePath("/portal");
   revalidatePath("/admin/events");
+}
+
+export async function vote(formData) {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const pollId = Number(formData.get("pollId"));
+  const optionId = Number(formData.get("optionId"));
+
+  const poll = db.prepare("SELECT * FROM polls WHERE id = ?").get(pollId);
+  if (!poll) return;
+  // Voting is closed manually or by deadline
+  if (poll.closed === 1 || (poll.closes_at && poll.closes_at < nowInJinzhou())) return;
+
+  const option = db
+    .prepare("SELECT id FROM poll_options WHERE id = ? AND poll_id = ?")
+    .get(optionId, pollId);
+  if (!option) return;
+
+  db.prepare(
+    `INSERT INTO poll_votes (poll_id, user_id, option_id)
+     VALUES (?, ?, ?)
+     ON CONFLICT(poll_id, user_id) DO UPDATE SET option_id = excluded.option_id`
+  ).run(pollId, session.uid, optionId);
+
+  revalidatePath("/portal");
+  revalidatePath("/admin/polls");
 }
