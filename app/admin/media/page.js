@@ -2,6 +2,7 @@ import Link from "next/link";
 import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { PhotoForm, VideoForm } from "./MediaForms";
+import ClipForm from "./ClipForm";
 import { setMediaVisibility, deleteMedia } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,10 @@ export default async function AdminMediaPage() {
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <PhotoForm />
-          <VideoForm />
+          <ClipForm />
+          <div className="md:col-span-2">
+            <VideoForm />
+          </div>
         </div>
 
         <h2 className="mt-12 text-xl font-semibold text-red-500">
@@ -33,7 +37,7 @@ export default async function AdminMediaPage() {
               key={m.id}
               className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900"
             >
-              {m.kind === "photo" ? (
+              {m.kind === "photo" && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={`/media/${m.filename.replace(".webp", "-t.webp")}`}
@@ -41,7 +45,17 @@ export default async function AdminMediaPage() {
                   loading="lazy"
                   className="aspect-square w-full object-cover"
                 />
-              ) : (
+              )}
+              {m.kind === "clip" && (
+                <video
+                  src={`/clip/${m.filename}`}
+                  controls
+                  preload="metadata"
+                  playsInline
+                  className="aspect-square w-full bg-black object-cover"
+                />
+              )}
+              {m.kind === "video" && (
                 <a
                   href={m.url}
                   target="_blank"
@@ -53,7 +67,10 @@ export default async function AdminMediaPage() {
               )}
 
               <div className="p-3">
-                <p className="truncate text-sm">{m.caption || "No caption"}</p>
+                <p className="truncate text-sm">
+                  {m.kind === "clip" ? "🎞️ " : ""}
+                  {m.caption || "No caption"}
+                </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <form action={setMediaVisibility}>
                     <input type="hidden" name="id" value={m.id} />

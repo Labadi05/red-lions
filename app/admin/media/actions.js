@@ -127,10 +127,14 @@ export async function deleteMedia(formData) {
   const row = db.prepare("SELECT * FROM media WHERE id = ?").get(id);
   if (!row) return;
 
-  if (row.kind === "photo" && row.filename) {
-    const thumb = row.filename.replace(".webp", "-t.webp");
+  // Photos and uploaded clips live on disk. Video links have no file.
+  if (row.filename) {
     await fs.rm(path.join(UPLOAD_DIR, row.filename), { force: true });
-    await fs.rm(path.join(UPLOAD_DIR, thumb), { force: true });
+    if (row.kind === "photo") {
+      await fs.rm(path.join(UPLOAD_DIR, row.filename.replace(".webp", "-t.webp")), {
+        force: true,
+      });
+    }
   }
   db.prepare("DELETE FROM media WHERE id = ?").run(id);
   refresh();
