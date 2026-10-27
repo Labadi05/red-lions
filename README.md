@@ -47,7 +47,7 @@ When the captain publishes an announcement, they choose whether it appears **pub
 Requirements: [Node.js](https://nodejs.org/) (LTS).
 
 ```bash
-git clone <this-repo-url>
+git clone <https://github.com/Labadi05/red-lions>
 cd red-lions
 npm install
 ```
@@ -75,7 +75,7 @@ Open http://localhost:3000.
 
 On the first run the database is created automatically in `data/` (ignored by git), the squad is seeded, and a captain account is created with username `captain` and the `ADMIN_PASSWORD` you set. Player accounts are then created from the captain's dashboard.
 
-> Never commit `.env.local` or the `data/` folder. They contain secrets and player login data.
+
 
 ## Project structure
 
