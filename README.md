@@ -101,7 +101,8 @@ data/           SQLite database (not committed)
 - [x] Social media links and contact page
 - [x] Photo and video gallery
 - [x] Private messages, tasks and player suggestions
-- [ ] Deployment on a Hong Kong server with HTTPS (China-friendly hosting) and backups
+- [x] Private messages, tasks and player suggestions Squad management (add and edit players)
+- [x] Deployment on a Hong Kong server with HTTPS (China-friendly hosting) and backups
 - [ ] Automatic WeChat notifications
 
 ## Notes
