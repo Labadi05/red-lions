@@ -52,9 +52,10 @@ export default async function AdminPage({ searchParams }) {
           <Link href="/admin/polls" className={linkStyle}>
             🗳️ Polls
           </Link>
-         <Link href="/admin/settings" className={linkStyle}>
-            ⚙️ Site info
+           <Link href="/admin/squad" className={linkStyle}>
+            👥 Squad
           </Link>
+         
            <Link href="/admin/media" className={linkStyle}>
             📸 Gallery
           </Link>
@@ -63,6 +64,9 @@ export default async function AdminPage({ searchParams }) {
           </Link>
           <Link href="/admin/feedback" className={linkStyle}>
             💡 Feedback{newFeedback > 0 ? ` (${newFeedback} new)` : ""}
+          </Link>
+          <Link href="/admin/settings" className={linkStyle}>
+            ⚙️ Site info
           </Link>
         </div>
 
