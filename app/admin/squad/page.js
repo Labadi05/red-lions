@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { canDeletePlayer } from "@/lib/squad";
 import PlayerForm from "./PlayerForm";
 import DeleteButton from "./DeleteButton";
+import PhotoUpload from "./PhotoUpload";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default async function AdminSquadPage() {
 
   const players = db
     .prepare(
-      `SELECT p.id, p.number, p.name, p.position, p.is_captain, u.username
+      `SELECT p.id, p.number, p.name, p.position, p.photo, p.is_captain, u.username
        FROM players p LEFT JOIN users u ON u.player_id = p.id
        ORDER BY CAST(p.number AS INTEGER)`
     )
@@ -26,8 +27,8 @@ export default async function AdminSquadPage() {
         </Link>
         <h1 className="mt-4 text-4xl font-bold">Squad 👥</h1>
         <p className="mt-2 text-neutral-400">
-          Add new players and fix numbers, names or positions. After adding a player,
-          create their login in the dashboard under &quot;Player accounts&quot;.
+          Add new players, fix numbers, names or positions, and upload photos. After adding
+          a player, create their login in the dashboard under &quot;Player accounts&quot;.
         </p>
 
         <h2 className="mt-8 text-xl font-semibold text-red-500">Add a player</h2>
@@ -61,7 +62,9 @@ export default async function AdminSquadPage() {
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-end gap-4">
+              <PhotoUpload player={p} />
+
+              <div className="mt-4 flex flex-wrap items-end gap-4 border-t border-neutral-800 pt-4">
                 <PlayerForm player={p} />
                 {p.is_captain !== 1 && canDeletePlayer(p.id) && (
                   <DeleteButton id={p.id} name={p.name} />
