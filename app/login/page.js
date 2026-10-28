@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 import { login } from "./actions";
+import Logo from "@/components/Logo";
+
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(login, null);
@@ -11,8 +13,12 @@ export default function LoginPage() {
       <form
         action={formAction}
         className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900 p-8"
-      >
-        <div className="text-center text-5xl">🦁</div>
+      >       
+      
+       <div className="flex justify-center">
+          <Logo width={96} />
+        </div>
+        
         <h1 className="mt-3 text-center text-2xl font-bold">Players&apos; Login</h1>
 
         <label className="mt-6 block text-sm text-neutral-400">Username</label>

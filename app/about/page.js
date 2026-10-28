@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSettings } from "@/lib/settings";
+import Logo from "@/components/Logo";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "About — Red Lions" };
@@ -13,7 +14,11 @@ export default function AboutPage() {
         <Link href="/" className="text-sm text-red-400 hover:underline">
           ← Home
         </Link>
-        <div className="mt-4 text-5xl">🦁</div>
+
+        <div className="mt-4">
+          <Logo width={140} />
+        </div>
+        
         <h1 className="mt-2 text-4xl font-bold">
           About <span className="text-red-600">Red Lions</span>
         </h1>
