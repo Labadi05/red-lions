@@ -63,3 +63,24 @@ export async function vote(formData) {
   revalidatePath("/portal");
   revalidatePath("/admin/polls");
 }
+
+export async function claimPaid(formData) {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const me = db.prepare("SELECT player_id FROM users WHERE id = ?").get(session.uid);
+  if (!me?.player_id) return;
+
+  const chargeId = Number(formData.get("chargeId"));
+  const claim = formData.get("claim") === "1";
+
+  // Only the player's own, still unpaid item can be flagged
+  db.prepare(
+    `UPDATE charge_items
+     SET claimed_at = CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE NULL END
+     WHERE charge_id = ? AND player_id = ? AND paid_at IS NULL`
+  ).run(claim ? 1 : 0, chargeId, me.player_id);
+
+  revalidatePath("/portal");
+  revalidatePath("/admin/money");
+}

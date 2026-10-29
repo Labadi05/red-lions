@@ -10,7 +10,9 @@ import Pitch from "@/components/Pitch";
 import Logo from "@/components/Logo";
 import PlayerPhoto from "@/components/PlayerPhoto";
 import { logout } from "../login/actions";
-import { setAttendance, vote } from "./actions";
+import { setAttendance, vote, claimPaid } from "./actions";
+import { getMyPayments, getPaymentInfo } from "@/lib/money";
+import { CATEGORIES, formatMoney } from "@/lib/moneyFormat";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +57,9 @@ export default async function PortalPage() {
 
   const unread = getUnreadCount(session.uid);
   const mine = getMyAttendance(session.uid);
+  const money = getMyPayments(session.uid);
+  const payInfo = getPaymentInfo();
+  const today = nowInJinzhou().slice(0, 10);
 
   const playersById = Object.fromEntries(
     db.prepare("SELECT id, number, name FROM players").all().map((p) => [p.id, p])
@@ -400,6 +405,102 @@ export default async function PortalPage() {
                     ))}
                   </div>
                 </>
+              )}
+            </div>
+          </section>
+
+                    <section>
+            <h2 className="text-xl font-semibold text-red-500">My payments 💰</h2>
+            <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
+              {money.open.length === 0 ? (
+                <p className="text-neutral-400">You don&apos;t owe anything right now 🎉</p>
+              ) : (
+                <>
+                  <div className="flex items-end gap-3">
+                    <div className="text-4xl font-black text-red-500">
+                      {formatMoney(money.outstanding)}
+                    </div>
+                    <div className="pb-1 text-sm text-neutral-400">to pay</div>
+                  </div>
+
+                  {payInfo && (
+                    <p className="mt-3 whitespace-pre-wrap rounded-lg border border-neutral-800 bg-neutral-950 p-3 text-sm text-neutral-300">
+                      <span className="text-neutral-500">How to pay: </span>
+                      {payInfo}
+                    </p>
+                  )}
+
+                  <div className="mt-4 space-y-3">
+                    {money.open.map((m) => (
+                      <div
+                        key={m.id}
+                        className="rounded-lg border border-neutral-800 bg-neutral-950 p-4"
+                      >
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="text-xl">{CATEGORIES[m.category].icon}</span>
+                          <span className="font-semibold">{m.title}</span>
+                          <span className="ml-auto text-lg font-bold">
+                            {formatMoney(m.amount_cents)}
+                          </span>
+                        </div>
+                        {m.reason && (
+                          <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-300">
+                            {m.reason}
+                          </p>
+                        )}
+                        {m.due_at && (
+                          <p
+                            className={`mt-2 text-xs ${
+                              m.due_at < today
+                                ? "font-semibold text-red-400"
+                                : "text-neutral-500"
+                            }`}
+                          >
+                            {m.due_at < today ? "⏰ Overdue · " : "Due "}
+                            {m.due_at}
+                          </p>
+                        )}
+                        <form action={claimPaid} className="mt-3">
+                          <input type="hidden" name="chargeId" value={m.id} />
+                          <input
+                            type="hidden"
+                            name="claim"
+                            value={m.claimed_at ? "0" : "1"}
+                          />
+                          <button
+                            className={`rounded-lg border px-4 py-1.5 text-sm ${
+                              m.claimed_at
+                                ? "border-gold text-gold"
+                                : "border-neutral-700 hover:border-red-600"
+                            }`}
+                          >
+                            {m.claimed_at
+                              ? "⏳ Waiting for the captain to confirm (tap to undo)"
+                              : "I've paid"}
+                          </button>
+                        </form>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {money.paid.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-xs uppercase text-neutral-500">Recently paid</p>
+                  <div className="mt-2 space-y-1">
+                    {money.paid.map((m) => (
+                      <div key={m.id} className="flex items-center gap-3 text-sm text-neutral-400">
+                        <span>{CATEGORIES[m.category].icon}</span>
+                        <span className="flex-1 truncate">{m.title}</span>
+                        <span>{formatMoney(m.amount_cents)}</span>
+                        <span className="text-xs text-green-400">
+                          ✅ {m.paid_at.slice(0, 10)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </section>
