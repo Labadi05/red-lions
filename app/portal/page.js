@@ -23,7 +23,7 @@ export default async function PortalPage() {
 
   const me = db
     .prepare(
-      `SELECT u.username, u.role, p.name, p.number, p.position, p.photo
+      `SELECT u.username, u.role, p.id AS player_id, p.name, p.number, p.position, p.photo
        FROM users u LEFT JOIN players p ON p.id = u.player_id
        WHERE u.id = ?`
     )
@@ -259,20 +259,27 @@ export default async function PortalPage() {
                   {!poll.closed && (
                     <form action={vote} className="mt-4 flex flex-wrap gap-2">
                       <input type="hidden" name="pollId" value={poll.id} />
-                      {poll.options.map((o) => (
-                        <button
-                          key={o.id}
-                          name="optionId"
-                          value={o.id}
-                          className={`rounded-lg border px-4 py-2 text-sm ${
-                            poll.myVote === o.id
-                              ? "border-red-600 bg-red-600 font-semibold"
-                              : "border-neutral-700 hover:border-red-600"
-                          }`}
-                        >
-                          {o.label}
-                        </button>
-                      ))}
+                                            {poll.options.map((o) => {
+                        const isSelf = poll.kind === "motm" && o.player_id === me.player_id;
+                        return (
+                          <button
+                            key={o.id}
+                            name="optionId"
+                            value={o.id}
+                            disabled={isSelf}
+                            title={isSelf ? "You can't vote for yourself" : undefined}
+                            className={`rounded-lg border px-4 py-2 text-sm ${
+                              isSelf
+                                ? "cursor-not-allowed border-neutral-800 text-neutral-600"
+                                : poll.myVote === o.id
+                                ? "border-red-600 bg-red-600 font-semibold"
+                                : "border-neutral-700 hover:border-red-600"
+                            }`}
+                          >
+                            {o.label}
+                          </button>
+                        );
+                      })}
                     </form>
                   )}
 

@@ -1,10 +1,11 @@
 import Link from "next/link";
+import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { getPolls } from "@/lib/polls";
 import { formatWhen } from "@/lib/format";
 import PollForm from "./PollForm";
 import CopyButton from "../news/CopyButton";
-import { setPollClosed, deletePoll } from "./actions";
+import { setPollClosed, deletePoll, applyMotmWinner } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,15 @@ export default async function AdminPollsPage() {
         <div className="mt-4 space-y-4">
           {polls.length === 0 && <p className="text-neutral-500">No polls yet.</p>}
           {polls.map((poll) => {
+            const isMotm = poll.kind === "motm";
+            const top = Math.max(0, ...poll.options.map((o) => o.count));
+            const appliedPlayer =
+              isMotm && poll.event_id
+                ? db
+                    .prepare("SELECT player_id FROM match_stats WHERE event_id = ? AND motm = 1")
+                    .get(poll.event_id)?.player_id
+                : null;
+
             const shareText =
               `🦁 RED LIONS\n\n🗳️ New poll: ${poll.question}\n` +
               poll.options.map((o, i) => `${i + 1}. ${o.label}`).join("\n") +
@@ -42,6 +52,11 @@ export default async function AdminPollsPage() {
               >
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="text-lg font-semibold">{poll.question}</span>
+                  {isMotm && (
+                    <span className="rounded-full bg-yellow-900 px-2 py-0.5 text-xs text-yellow-300">
+                      Anonymous vote
+                    </span>
+                  )}
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs ${
                       poll.closed
@@ -63,24 +78,38 @@ export default async function AdminPollsPage() {
                 <div className="mt-4 space-y-3">
                   {poll.options.map((o) => {
                     const pct = poll.total ? Math.round((100 * o.count) / poll.total) : 0;
+                    const isLeader = top > 0 && o.count === top;
                     return (
                       <div key={o.id}>
-                        <div className="flex items-center justify-between text-sm">
-                          <span>{o.label}</span>
-                          <span className="text-neutral-400">
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                          <span className={isLeader && poll.closed ? "font-semibold text-gold" : ""}>
+                            {o.label}
+                            {isLeader && poll.closed ? " 🏆" : ""}
+                          </span>
+                          <span className="ml-auto text-neutral-400">
                             {o.count} · {pct}%
                           </span>
+                          {isMotm && poll.closed && isLeader && (
+                            appliedPlayer === o.player_id ? (
+                              <span className="rounded-full bg-green-900 px-2 py-0.5 text-xs text-green-300">
+                                ✅ Recorded as MOTM
+                              </span>
+                            ) : (
+                              <form action={applyMotmWinner}>
+                                <input type="hidden" name="pollId" value={poll.id} />
+                                <input type="hidden" name="optionId" value={o.id} />
+                                <button className="rounded-lg border border-gold px-2 py-0.5 text-xs text-gold hover:bg-neutral-800">
+                                  Make MOTM
+                                </button>
+                              </form>
+                            )
+                          )}
                         </div>
                         <div className="mt-1 h-2 overflow-hidden rounded-full bg-neutral-800">
-                          <div
-                            className="h-full bg-red-600"
-                            style={{ width: `${pct}%` }}
-                          />
+                          <div className="h-full bg-red-600" style={{ width: `${pct}%` }} />
                         </div>
-                        {o.voters.length > 0 && (
-                          <p className="mt-1 text-xs text-neutral-500">
-                            {o.voters.join(" · ")}
-                          </p>
+                        {!isMotm && o.voters.length > 0 && (
+                          <p className="mt-1 text-xs text-neutral-500">{o.voters.join(" · ")}</p>
                         )}
                       </div>
                     );

@@ -5,6 +5,7 @@ import { TYPES, formatWhen, nowInJinzhou } from "@/lib/format";
 import EventForm from "./EventForm";
 import CopyButton from "../news/CopyButton";
 import { deleteEvent } from "./actions";
+import MotmButton from "./MotmButton";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,10 @@ function EventCard({ e }) {
   const count = (s) => rows.filter((r) => r.status === s).length;
   const noReply = rows.filter((r) => !r.status).length;
   const t = TYPES[e.type];
+
+    const motmPoll = db
+    .prepare("SELECT id FROM polls WHERE event_id = ? AND kind = 'motm'")
+    .get(e.id);
 
   const shareText =
     `🦁 RED LIONS\n\n${t.icon} ${e.title}\n🗓️ ${formatWhen(e.starts_at)}` +
@@ -101,6 +106,19 @@ function EventCard({ e }) {
             📊 Stats
           </Link>
         )}
+
+                {e.type === "match" && e.starts_at < nowInJinzhou() &&
+          (motmPoll ? (
+            <Link
+              href="/admin/polls"
+              className="rounded-lg border border-gold px-3 py-1 text-xs text-gold hover:bg-neutral-800"
+            >
+              🏆 MOTM vote
+            </Link>
+          ) : (
+            <MotmButton eventId={e.id} />
+          ))}
+
         <CopyButton text={shareText} />
         <form action={deleteEvent} className="ml-auto">
           <input type="hidden" name="id" value={e.id} />

@@ -44,9 +44,15 @@ export async function vote(formData) {
   if (poll.closed === 1 || (poll.closes_at && poll.closes_at < nowInJinzhou())) return;
 
   const option = db
-    .prepare("SELECT id FROM poll_options WHERE id = ? AND poll_id = ?")
+    .prepare("SELECT id, player_id FROM poll_options WHERE id = ? AND poll_id = ?")
     .get(optionId, pollId);
   if (!option) return;
+
+  // In a man-of-the-match vote, nobody can vote for themselves
+  if (poll.kind === "motm" && option.player_id) {
+    const me = db.prepare("SELECT player_id FROM users WHERE id = ?").get(session.uid);
+    if (me?.player_id === option.player_id) return;
+  }
 
   db.prepare(
     `INSERT INTO poll_votes (poll_id, user_id, option_id)

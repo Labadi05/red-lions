@@ -83,3 +83,34 @@ export async function deletePoll(formData) {
   db.prepare("DELETE FROM polls WHERE id = ?").run(id);
   refresh();
 }
+
+export async function applyMotmWinner(formData) {
+  await requireAdmin();
+
+  const pollId = Number(formData.get("pollId"));
+  const optionId = Number(formData.get("optionId"));
+
+  const poll = db.prepare("SELECT * FROM polls WHERE id = ? AND kind = 'motm'").get(pollId);
+  const option = db
+    .prepare("SELECT player_id FROM poll_options WHERE id = ? AND poll_id = ?")
+    .get(optionId, pollId);
+  if (!poll || !poll.event_id || !option?.player_id) return;
+
+  // Only once the vote has closed
+  const closed = poll.closed === 1 || (poll.closes_at && poll.closes_at < nowInJinzhou());
+  if (!closed) return;
+
+  const apply = db.transaction(() => {
+    db.prepare("UPDATE match_stats SET motm = 0 WHERE event_id = ?").run(poll.event_id);
+    db.prepare("UPDATE match_stats SET motm = 1 WHERE event_id = ? AND player_id = ?").run(
+      poll.event_id,
+      option.player_id
+    );
+  });
+  apply();
+
+  revalidatePath("/stats");
+  revalidatePath("/squad");
+  revalidatePath("/admin/polls");
+  revalidatePath("/admin/events");
+}
