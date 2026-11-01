@@ -11,7 +11,7 @@ export async function login(prevState, formData) {
 
   const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username);
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    return { error: "Wrong username or password." };
+        return { error: "invalid" };
   }
 
   await createSession(user);

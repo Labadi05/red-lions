@@ -32,3 +32,16 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
+
+/* Arabic pages use the Arabic font */
+html[dir="rtl"] body {
+  font-family: var(--font-arabic), system-ui, "Segoe UI", Tahoma, sans-serif;
+}
+
+/* The captain's dashboard always stays English and left-to-right */
+[data-admin] {
+  font-family: var(--font-geist-sans), system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+body:has([data-admin]) .lang-switch {
+  display: none;
+}
