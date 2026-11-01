@@ -53,6 +53,7 @@ export async function setDone(formData) {
   revalidatePath("/admin/messages");
 }
 
+// Returns short codes ("type", "subject", "body", "limit"); the form translates them
 export async function sendFeedback(prevState, formData) {
   const session = await requireUser();
 
@@ -60,13 +61,9 @@ export async function sendFeedback(prevState, formData) {
   const subject = String(formData.get("subject") || "").trim();
   const body = String(formData.get("body") || "").trim();
 
-  if (!FEEDBACK_KINDS[kind]) return { error: "Choose a type." };
-  if (!subject || subject.length > 120) {
-    return { error: "Write a short title (max 120 characters)." };
-  }
-  if (!body || body.length > 2000) {
-    return { error: "Write your message (max 2000 characters)." };
-  }
+  if (!FEEDBACK_KINDS[kind]) return { error: "type" };
+  if (!subject || subject.length > 120) return { error: "subject" };
+  if (!body || body.length > 2000) return { error: "body" };
 
   // Simple spam protection: 10 per day per player
   const recent = db
@@ -75,9 +72,7 @@ export async function sendFeedback(prevState, formData) {
        WHERE user_id = ? AND created_at > datetime('now', '-1 day')`
     )
     .get(session.uid).n;
-  if (recent >= 10) {
-    return { error: "You have sent a lot today. Please try again tomorrow." };
-  }
+  if (recent >= 10) return { error: "limit" };
 
   db.prepare("INSERT INTO feedback (user_id, kind, subject, body) VALUES (?, ?, ?, ?)").run(
     session.uid,
@@ -89,5 +84,5 @@ export async function sendFeedback(prevState, formData) {
   revalidatePath("/admin");
   revalidatePath("/admin/feedback");
   revalidatePath("/portal/inbox");
-  return { ok: "Sent to the captain ✓" };
+  return { ok: true };
 }

@@ -9,6 +9,7 @@ import {
   FEEDBACK_STATUS,
 } from "@/lib/messageKinds";
 import { formatWhen, nowInJinzhou } from "@/lib/format";
+import { getT } from "@/lib/i18n";
 import MarkRead from "./MarkRead";
 import FeedbackForm from "./FeedbackForm";
 import { setDone } from "./actions";
@@ -16,6 +17,8 @@ import { setDone } from "./actions";
 export const dynamic = "force-dynamic";
 
 export default async function InboxPage() {
+  const { t, lang } = await getT();
+
   const session = await getSession();
   if (!session) redirect("/login");
 
@@ -33,18 +36,16 @@ export default async function InboxPage() {
       <MarkRead hasUnread={hasUnread} />
       <div className="mx-auto max-w-3xl">
         <Link href="/portal" className="text-sm text-red-400 hover:underline">
-          ← Portal
+          {t("common.backPortal")}
         </Link>
-        <h1 className="mt-4 text-4xl font-bold">Inbox 📬</h1>
+        <h1 className="mt-4 text-4xl font-bold">{t("inbox.title")}</h1>
         {openTasks > 0 && (
-          <p className="mt-2 text-sm text-yellow-400">
-            You have {openTasks} open task{openTasks === 1 ? "" : "s"}.
-          </p>
+          <p className="mt-2 text-sm text-yellow-400">{t("inbox.openTasks", { n: openTasks })}</p>
         )}
 
-        <h2 className="mt-8 text-xl font-semibold text-red-500">From the captain</h2>
+        <h2 className="mt-8 text-xl font-semibold text-red-500">{t("inbox.fromCaptain")}</h2>
         <div className="mt-4 space-y-3">
-          {inbox.length === 0 && <p className="text-neutral-500">No messages yet.</p>}
+          {inbox.length === 0 && <p className="text-neutral-500">{t("inbox.empty")}</p>}
           {inbox.map((m) => {
             const isAction = ACTION_KINDS.includes(m.kind);
             const isNew = !m.read_at;
@@ -61,22 +62,20 @@ export default async function InboxPage() {
                   <span className="text-xl">{KINDS[m.kind].icon}</span>
                   <span className="text-lg font-semibold">{m.subject}</span>
                   <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs text-neutral-300">
-                    {KINDS[m.kind].label}
+                    {t(`kind.${m.kind}`)}
                   </span>
                   {isNew && (
                     <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold">
-                      NEW
+                      {t("inbox.new")}
                     </span>
                   )}
-                  <span className="ml-auto text-xs text-neutral-500">
+                  <span className="ms-auto text-xs text-neutral-500" dir="ltr">
                     {m.created_at.slice(0, 10)}
                   </span>
                 </div>
 
                 {m.body && (
-                  <p className="mt-3 whitespace-pre-wrap text-sm text-neutral-300">
-                    {m.body}
-                  </p>
+                  <p className="mt-3 whitespace-pre-wrap text-sm text-neutral-300">{m.body}</p>
                 )}
 
                 {m.due_at && (
@@ -85,8 +84,8 @@ export default async function InboxPage() {
                       overdue ? "font-semibold text-red-400" : "text-neutral-400"
                     }`}
                   >
-                    {overdue ? "⏰ Overdue · " : "Due "}
-                    {formatWhen(m.due_at)}
+                    {overdue ? t("inbox.overdue") : t("inbox.due")}
+                    {formatWhen(m.due_at, lang)}
                   </p>
                 )}
 
@@ -101,7 +100,7 @@ export default async function InboxPage() {
                           : "border-neutral-700 hover:border-red-600"
                       }`}
                     >
-                      {m.done_at ? "✅ Done (tap to undo)" : "Mark as done"}
+                      {m.done_at ? t("inbox.done") : t("inbox.markDone")}
                     </button>
                   </form>
                 )}
@@ -110,18 +109,17 @@ export default async function InboxPage() {
           })}
         </div>
 
-        <h2 className="mt-12 text-xl font-semibold text-red-500">Write to the captain</h2>
-        <p className="mt-1 text-sm text-neutral-400">
-          Have an idea for the team, a question, or a problem? Send it here. The captain
-          reviews it and can reply.
-        </p>
+        <h2 className="mt-12 text-xl font-semibold text-red-500">{t("inbox.write")}</h2>
+        <p className="mt-1 text-sm text-neutral-400">{t("inbox.writeHelp")}</p>
         <div className="mt-4">
           <FeedbackForm />
         </div>
 
-        <h2 className="mt-12 text-xl font-semibold text-red-500">What I sent</h2>
+        <h2 className="mt-12 text-xl font-semibold text-red-500">{t("inbox.sent")}</h2>
         <div className="mt-4 space-y-3">
-          {feedback.length === 0 && <p className="text-neutral-500">Nothing sent yet.</p>}
+          {feedback.length === 0 && (
+            <p className="text-neutral-500">{t("inbox.nothingSent")}</p>
+          )}
           {feedback.map((f) => (
             <div
               key={f.id}
@@ -133,16 +131,16 @@ export default async function InboxPage() {
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs ${FEEDBACK_STATUS[f.status].style}`}
                 >
-                  {FEEDBACK_STATUS[f.status].label}
+                  {t(`fstatus.${f.status}`)}
                 </span>
-                <span className="ml-auto text-xs text-neutral-500">
+                <span className="ms-auto text-xs text-neutral-500" dir="ltr">
                   {f.created_at.slice(0, 10)}
                 </span>
               </div>
               <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-300">{f.body}</p>
               {f.reply && (
-                <div className="mt-3 rounded-lg border-l-4 border-red-600 bg-neutral-950 p-3 text-sm">
-                  <div className="text-xs text-neutral-500">Captain&apos;s reply</div>
+                <div className="mt-3 rounded-lg border-s-4 border-red-600 bg-neutral-950 p-3 text-sm">
+                  <div className="text-xs text-neutral-500">{t("inbox.reply")}</div>
                   <p className="mt-1 whitespace-pre-wrap text-neutral-200">{f.reply}</p>
                 </div>
               )}
