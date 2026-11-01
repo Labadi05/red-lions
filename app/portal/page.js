@@ -13,6 +13,7 @@ import { logout } from "../login/actions";
 import { setAttendance, vote, claimPaid } from "./actions";
 import { getMyPayments, getPaymentInfo } from "@/lib/money";
 import { CATEGORIES, formatMoney } from "@/lib/moneyFormat";
+import TeamCards from "@/components/TeamCards";
 
 export const dynamic = "force-dynamic";
 
@@ -525,7 +526,13 @@ export default async function PortalPage() {
                     )}
                   </div>
                   <h3 className="mt-1 text-lg font-semibold">{a.title}</h3>
-                  <p className="mt-2 whitespace-pre-wrap text-neutral-300">{a.body}</p>
+                                    {a.kind === "teams" && a.data ? (
+                    <div className="mt-4">
+                      <TeamCards teams={JSON.parse(a.data).teams} inner />
+                    </div>
+                  ) : (
+                    <p className="mt-2 whitespace-pre-wrap text-neutral-300">{a.body}</p>
+                  )}
                 </article>
               ))}
             </div>

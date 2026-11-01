@@ -57,6 +57,10 @@ export default async function AdminPage({ searchParams }) {
             💰 Money
           </Link>
 
+          <Link href="/admin/teams" className={linkStyle}>
+            🔀 Teams
+          </Link>
+
            <Link href="/admin/squad" className={linkStyle}>
             👥 Squad
           </Link>
