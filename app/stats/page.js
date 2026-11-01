@@ -1,10 +1,11 @@
 import Link from "next/link";
 import db from "@/lib/db";
+import { getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Stats — Red Lions" };
 
-function Board({ title, icon, rows, field }) {
+function Board({ title, icon, rows, field, noData }) {
   const ranked = rows
     .filter((r) => r[field] > 0)
     .sort((a, b) => b[field] - a[field] || a.name.localeCompare(b.name))
@@ -16,7 +17,7 @@ function Board({ title, icon, rows, field }) {
         {icon} {title}
       </h2>
       {ranked.length === 0 ? (
-        <p className="mt-3 text-sm text-neutral-500">No data yet.</p>
+        <p className="mt-3 text-sm text-neutral-500">{noData}</p>
       ) : (
         <ol className="mt-3 space-y-2">
           {ranked.map((r, i) => (
@@ -33,7 +34,9 @@ function Board({ title, icon, rows, field }) {
   );
 }
 
-export default function StatsPage() {
+export default async function StatsPage() {
+  const { t } = await getT();
+
   const rows = db
     .prepare(
       `SELECT p.id, p.number, p.name,
@@ -49,22 +52,21 @@ export default function StatsPage() {
     <main className="min-h-screen bg-neutral-950 px-6 py-12 text-white">
       <div className="mx-auto max-w-4xl">
         <Link href="/" className="text-sm text-red-400 hover:underline">
-          ← Home
+          {t("common.backHome")}
         </Link>
-        <h1 className="mt-4 text-4xl font-bold">Player Stats 📊</h1>
+        <h1 className="mt-4 text-4xl font-bold">{t("stats.title")} 📊</h1>
         <p className="mt-2 text-neutral-400">
-          Red Lions leaderboards. Team results are on the{" "}
+          {t("stats.subtitle")}{" "}
           <Link href="/fixtures" className="text-red-400 hover:underline">
-            Fixtures page
+            {t("stats.teamResults")}
           </Link>
-          .
         </p>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <Board title="Top scorers" icon="⚽" rows={rows} field="goals" />
-          <Board title="Top assists" icon="🎯" rows={rows} field="assists" />
-          <Board title="Man of the match" icon="⭐" rows={rows} field="motm" />
-          <Board title="Appearances" icon="👟" rows={rows} field="apps" />
+          <Board title={t("stats.scorers")} icon="⚽" rows={rows} field="goals" noData={t("stats.noData")} />
+          <Board title={t("stats.assists")} icon="🎯" rows={rows} field="assists" noData={t("stats.noData")} />
+          <Board title={t("stats.motm")} icon="⭐" rows={rows} field="motm" noData={t("stats.noData")} />
+          <Board title={t("stats.apps")} icon="👟" rows={rows} field="apps" noData={t("stats.noData")} />
         </div>
       </div>
     </main>

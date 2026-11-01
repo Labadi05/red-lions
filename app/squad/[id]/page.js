@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import db from "@/lib/db";
 import PlayerPhoto from "@/components/PlayerPhoto";
+import { getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export async function generateMetadata({ params }) {
 
 export default async function PlayerProfilePage({ params }) {
   const { id } = await params;
+  const { t } = await getT();
 
   const player = db.prepare("SELECT * FROM players WHERE id = ?").get(Number(id));
   if (!player) notFound();
@@ -28,17 +30,17 @@ export default async function PlayerProfilePage({ params }) {
     .get(player.id);
 
   const boxes = [
-    ["Appearances", stats.apps],
-    ["Goals", stats.goals],
-    ["Assists", stats.assists],
-    ["Man of the match", stats.motm],
+    [t("profile.appearances"), stats.apps],
+    [t("profile.goals"), stats.goals],
+    [t("profile.assists"), stats.assists],
+    [t("profile.motm"), stats.motm],
   ];
 
   return (
     <main className="min-h-screen bg-neutral-950 px-6 py-12 text-white">
       <div className="mx-auto max-w-4xl">
         <Link href="/squad" className="text-sm text-red-400 hover:underline">
-          ← Squad
+          {t("common.backSquad")}
         </Link>
 
         <div className="mt-6 grid gap-8 md:grid-cols-[320px_1fr]">
@@ -50,10 +52,10 @@ export default async function PlayerProfilePage({ params }) {
             <div className="text-7xl font-black text-red-600">{player.number}</div>
             <h1 className="mt-1 text-4xl font-bold">{player.name}</h1>
             <p className="mt-2 flex items-center gap-3 text-neutral-400">
-              {player.position}
+              {t(`pos.${player.position}`)}
               {player.is_captain === 1 && (
                 <span className="rounded-md bg-gold px-2 py-0.5 text-xs font-black text-neutral-950">
-                  Captain
+                  {t("common.captain")}
                 </span>
               )}
             </p>
@@ -74,4 +76,4 @@ export default async function PlayerProfilePage({ params }) {
       </div>
     </main>
   );
-} 
+}

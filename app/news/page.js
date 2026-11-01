@@ -1,10 +1,12 @@
 import Link from "next/link";
 import db from "@/lib/db";
+import { getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "News — Red Lions" };
 
-export default function NewsPage() {
+export default async function NewsPage() {
+  const { t } = await getT();
   const items = db
     .prepare("SELECT * FROM announcements WHERE visibility = 'public' ORDER BY id DESC")
     .all();
@@ -13,15 +15,13 @@ export default function NewsPage() {
     <main className="min-h-screen bg-neutral-950 px-6 py-12 text-white">
       <div className="mx-auto max-w-3xl">
         <Link href="/" className="text-sm text-red-400 hover:underline">
-          ← Home
+          {t("common.backHome")}
         </Link>
-        <h1 className="mt-4 text-4xl font-bold">News 📰</h1>
-        <p className="mt-2 text-neutral-400">Official Red Lions announcements</p>
+        <h1 className="mt-4 text-4xl font-bold">{t("news.title")}</h1>
+        <p className="mt-2 text-neutral-400">{t("news.subtitle")}</p>
 
         <div className="mt-8 space-y-4">
-          {items.length === 0 && (
-            <p className="text-neutral-500">No news yet. Check back soon!</p>
-          )}
+          {items.length === 0 && <p className="text-neutral-500">{t("news.empty")}</p>}
           {items.map((a) => (
             <article
               key={a.id}

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { getSettings } from "@/lib/settings";
+import { getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Contact — Red Lions" };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const { t } = await getT();
   const s = getSettings();
 
   const socials = [
@@ -23,9 +25,9 @@ export default function ContactPage() {
     <main className="min-h-screen bg-neutral-950 px-6 py-12 text-white">
       <div className="mx-auto max-w-2xl">
         <Link href="/" className="text-sm text-red-400 hover:underline">
-          ← Home
+          {t("common.backHome")}
         </Link>
-        <h1 className="mt-4 text-4xl font-bold">Contact 📬</h1>
+        <h1 className="mt-4 text-4xl font-bold">{t("contact.title")} 📬</h1>
         {s.contact_note && (
           <p className="mt-3 whitespace-pre-wrap text-neutral-300">{s.contact_note}</p>
         )}
@@ -34,8 +36,10 @@ export default function ContactPage() {
           <div className="mt-8 space-y-3">
             {s.wechat_id && (
               <div className={card}>
-                <div className="text-xs text-neutral-500">💬 WeChat</div>
-                <div className="mt-1 text-lg font-semibold">{s.wechat_id}</div>
+                <div className="text-xs text-neutral-500">💬 {t("contact.wechat")}</div>
+                <div className="mt-1 text-lg font-semibold" dir="ltr">
+                  {s.wechat_id}
+                </div>
               </div>
             )}
             {s.whatsapp && (
@@ -45,17 +49,18 @@ export default function ContactPage() {
                 rel="noopener noreferrer"
                 className={`block hover:border-red-600 ${card}`}
               >
-                <div className="text-xs text-neutral-500">📱 WhatsApp</div>
-                <div className="mt-1 text-lg font-semibold">{s.whatsapp}</div>
+                <div className="text-xs text-neutral-500">📱 {t("contact.whatsapp")}</div>
+                <div className="mt-1 text-lg font-semibold" dir="ltr">
+                  {s.whatsapp}
+                </div>
               </a>
             )}
             {s.email && (
-              <a
-                href={`mailto:${s.email}`}
-                className={`block hover:border-red-600 ${card}`}
-              >
-                <div className="text-xs text-neutral-500">✉️ Email</div>
-                <div className="mt-1 text-lg font-semibold">{s.email}</div>
+              <a href={`mailto:${s.email}`} className={`block hover:border-red-600 ${card}`}>
+                <div className="text-xs text-neutral-500">✉️ {t("contact.email")}</div>
+                <div className="mt-1 text-lg font-semibold" dir="ltr">
+                  {s.email}
+                </div>
               </a>
             )}
           </div>
@@ -63,7 +68,7 @@ export default function ContactPage() {
 
         {socials.length > 0 && (
           <>
-            <h2 className="mt-10 text-xl font-semibold text-red-500">Follow us</h2>
+            <h2 className="mt-10 text-xl font-semibold text-red-500">{t("contact.follow")}</h2>
             <div className="mt-4 flex flex-wrap gap-3">
               {socials.map((x) => (
                 <a
@@ -81,7 +86,7 @@ export default function ContactPage() {
         )}
 
         {!hasContact && socials.length === 0 && (
-          <p className="mt-8 text-neutral-500">Contact details coming soon.</p>
+          <p className="mt-8 text-neutral-500">{t("contact.soon")}</p>
         )}
       </div>
     </main>
