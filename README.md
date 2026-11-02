@@ -77,33 +77,7 @@ On the first run the database is created automatically in `data/` (ignored by gi
 
 
 
-## Project structure
 
-```
-app/
-  admin/        captain's dashboard (news, events, polls, lineups, stats, check-in)
-  portal/       players' portal
-  login/        login page and actions
-  squad/ news/ fixtures/ stats/    public pages
-components/     shared UI (pitch view)
-lib/            database, sessions, auth guard, formations, attendance, polls helpers
-data/           SQLite database (not committed)
-```
-
-## Roadmap
-
-- [x] Public squad, news, fixtures and results, player stats
-- [x] Player accounts, login, private portal
-- [x] Announcements with public / players-only visibility
-- [x] Events, attendance, check-in and attendance ranking
-- [x] Lineups, match results and match stats
-- [x] Polls and voting
-- [x] Social media links and contact page
-- [x] Photo and video gallery
-- [x] Private messages, tasks and player suggestions
-- [x] Private messages, tasks and player suggestions Squad management (add and edit players)
-- [x] Deployment on a Hong Kong server with HTTPS (China-friendly hosting) and backups
-- [ ] Automatic WeChat notifications
 
 ## Notes
 
