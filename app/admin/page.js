@@ -22,6 +22,17 @@ export default async function AdminPage({ searchParams }) {
     const newFeedback = db
     .prepare("SELECT COUNT(*) AS n FROM feedback WHERE status = 'new'")
     .get().n;
+      const failures = db
+    .prepare(
+      `SELECT at, username, ip, reason FROM login_failures
+       WHERE at > datetime('now', '-7 days') ORDER BY id DESC LIMIT 15`
+    )
+    .all();
+  const REASONS = {
+    bad_password: "Wrong password",
+    unknown_user: "Unknown username",
+    lockout: "🔒 Locked for 15 min",
+  };
 
   const players = db
     .prepare(
@@ -80,6 +91,38 @@ export default async function AdminPage({ searchParams }) {
         </div>
 
         <h2 className="mt-12 text-xl font-semibold text-red-500">Attendance ranking 📈</h2>
+                <details className="mt-10 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+          <summary className="cursor-pointer text-sm font-semibold">
+            🔐 Failed logins, last 7 days ({failures.length}
+            {failures.length === 15 ? "+" : ""})
+          </summary>
+          {failures.length === 0 ? (
+            <p className="mt-3 text-sm text-neutral-500">None. All quiet.</p>
+          ) : (
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[420px] text-left text-xs">
+                <thead className="text-neutral-500">
+                  <tr>
+                    <th className="py-1 pr-3">When (UTC)</th>
+                    <th className="py-1 pr-3">Username</th>
+                    <th className="py-1 pr-3">Address</th>
+                    <th className="py-1">What happened</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {failures.map((f, i) => (
+                    <tr key={i} className="border-t border-neutral-800">
+                      <td className="py-1 pr-3 text-neutral-400">{f.at}</td>
+                      <td className="py-1 pr-3">{f.username || "(empty)"}</td>
+                      <td className="py-1 pr-3 text-neutral-400">{f.ip}</td>
+                      <td className="py-1">{REASONS[f.reason] ?? f.reason}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </details>
         <p className="mt-1 text-sm text-neutral-400">
           Only events you have checked in count. No-show = said &quot;Coming&quot; but
           did not come.

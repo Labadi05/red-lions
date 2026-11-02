@@ -40,8 +40,10 @@ export default function LoginPage() {
         />
 
         {state?.error && (
-          <p className="mt-4 text-sm text-red-400">{t(`login.error.${state.error}`)}</p>
-        )}
+          <p className="mt-4 text-sm text-red-400">
+            {t(`login.error.${state.error}`, { minutes: state.minutes })}
+          </p>
+         )}
 
         <button
           type="submit"

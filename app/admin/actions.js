@@ -15,8 +15,8 @@ export async function saveAccount(prevState, formData) {
   if (!/^[a-z0-9_]{3,20}$/.test(username)) {
     return { error: "Username: 3-20 letters, numbers or _ only." };
   }
-  if (password.length < 6) {
-    return { error: "Password must be at least 6 characters." };
+   if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
   }
 
   const player = db.prepare("SELECT id FROM players WHERE id = ?").get(playerId);
@@ -30,7 +30,9 @@ export async function saveAccount(prevState, formData) {
 
   const hash = bcrypt.hashSync(password, 10);
   if (existing) {
-    db.prepare("UPDATE users SET username = ?, password_hash = ? WHERE id = ?").run(
+    db.prepare(
+      "UPDATE users SET username = ?, password_hash = ?, pwv = pwv + 1 WHERE id = ?"
+    ).run(
       username,
       hash,
       existing.id
