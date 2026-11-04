@@ -126,8 +126,8 @@ All wording for the public site and the players' portal lives in plain text file
 
 To fix a sentence, edit its line in the matching file. Content typed by the captain (news, event titles, messages) is shown exactly as written.
 
-## Project structure
 
+<<<<<<< HEAD
 ```
 app/
   admin/          captain's dashboard (accounts, squad, news, events, lineups, stats,
@@ -148,6 +148,12 @@ data/             SQLite database and uploads (not committed)
 - The site needs a Node.js server with a **persistent disk**: the database (`data/redlions.db`) and all uploads (`data/uploads/`) live in the `data` folder, so back it up regularly.
 - Serve it over **HTTPS** (session cookies are marked secure in production) and make the reverse proxy forward the visitor's address in `X-Forwarded-For`, which the login protection relies on.
 - Set `SESSION_SECRET` and `ADMIN_PASSWORD` as environment variables on the server.
+=======
+
+## Notes
+
+Built for a team in mainland China: the site avoids Google-dependent services, and notifications target **WeChat** (for now through a "Copy for WeChat" button).
+>>>>>>> 7210a837dac49fe67f3a51e611e6af970a822aae
 
 ## Author
 
