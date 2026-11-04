@@ -28,7 +28,7 @@ The public site and the players' portal are available in **English and Arabic** 
 - **Gallery**: photos, short video clips played in the page, and links to videos on other sites. Items marked "players only" are hidden from the public.
 - **Contact**: WeChat ID, WhatsApp, email and social media links (only the ones the captain fills in are shown).
 - **Language switch**: English / العربية, remembered in the browser. The first visit follows the browser's language.
-
+- **Install as an app**: the site can be added to a phone's home screen with the team badge (works on iPhone and Android), with a simple offline screen and an install guide page.
 ## Players' portal
 
 Each player has an individual account created by the captain.

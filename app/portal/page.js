@@ -146,6 +146,9 @@ export default async function PortalPage() {
             <Link href="/" className={navLink}>
               {t("portal.publicSite")}
             </Link>
+            <Link href="/install" className={navLink}>
+              📲 {t("nav.install")}
+            </Link>
             {me.role === "admin" && (
               <Link href="/admin" className={`${navLink} !border-gold text-gold`}>
                 {t("portal.dashboard")}

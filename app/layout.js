@@ -3,6 +3,7 @@ import "./globals.css";
 import { getLang, getDictionary } from "@/lib/i18n";
 import I18nProvider from "@/components/I18nProvider";
 import LanguageSwitch from "@/components/LanguageSwitch";
+import RegisterServiceWorker from "@/components/RegisterServiceWorker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,6 +20,12 @@ export const metadata = {
   title: "Red Lions — Jinzhou",
   description:
     "Official website of Red Lions, a Moroccan football team in Jinzhou, China.",
+  applicationName: "Red Lions",
+  appleWebApp: {
+    capable: true,
+    title: "Red Lions",
+    statusBarStyle: "black",
+  },
 };
 
 export const viewport = {
@@ -36,6 +43,7 @@ export default async function RootLayout({ children }) {
           <LanguageSwitch lang={lang} />
           {children}
         </I18nProvider>
+        <RegisterServiceWorker />
       </body>
     </html>
   );

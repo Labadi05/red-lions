@@ -9,6 +9,7 @@ const links = [
   ["/stats", "nav.stats"],
   ["/gallery", "nav.gallery"],
   ["/contact", "nav.contact"],
+  ["/install", "nav.install"],
 ];
 
 export default async function Home() {
