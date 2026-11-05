@@ -15,7 +15,8 @@
     "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "sharp": "^0.35.5"
+    "sharp": "^0.35.5",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

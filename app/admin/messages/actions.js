@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { KINDS } from "@/lib/messageKinds";
+import { sendPush } from "@/lib/push";
 
 function refresh() {
   revalidatePath("/admin/messages");
@@ -51,6 +52,17 @@ export async function sendMessage(prevState, formData) {
     for (const id of ids) insert.run(result.lastInsertRowid, id);
   });
   create();
+  
+    // Alert only the players who received it
+  void sendPush({
+    playerIds: ids,
+    build: (t) => ({
+      title: t(`push.message.${kind}`),
+      body: subject,
+      url: "/portal/inbox",
+      tag: "inbox",
+    }),
+  }).catch(() => {});
 
   refresh();
   return { ok: `Sent to ${ids.length} player${ids.length === 1 ? "" : "s"} ✓` };

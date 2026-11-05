@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { TYPES } from "@/lib/format";
+import { TYPES, formatWhen, nowInJinzhou } from "@/lib/format";
+import { sendPush } from "@/lib/push";
 
 // Empty -> null (no score yet). Otherwise a whole number 0-99, or NaN if invalid.
 function parseScore(value) {
@@ -45,17 +46,45 @@ export async function saveEvent(prevState, formData) {
   }
 
   const opp = type === "match" ? opponent : "";
+  const upcoming = startsAt > nowInJinzhou();
 
   if (id) {
+    const previous = db
+      .prepare("SELECT starts_at, location FROM events WHERE id = ?")
+      .get(id);
+
     db.prepare(
       `UPDATE events SET type = ?, title = ?, starts_at = ?, location = ?, notes = ?,
          opponent = ?, score_for = ?, score_against = ? WHERE id = ?`
     ).run(type, title, startsAt, location, notes, opp, scoreFor, scoreAgainst, id);
+
+    // Alert the players only if the time or place changed (not for scores or notes)
+    if (upcoming && previous && (previous.starts_at !== startsAt || previous.location !== location)) {
+      void sendPush({
+        build: (t, lang) => ({
+          title: t("push.eventChanged"),
+          body: `${title} · ${formatWhen(startsAt, lang)}${location ? ` · ${location}` : ""}`,
+          url: "/portal",
+          tag: `event-${id}`,
+        }),
+      }).catch(() => {});
+    }
   } else {
     db.prepare(
       `INSERT INTO events (type, title, starts_at, location, notes, opponent, score_for, score_against)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(type, title, startsAt, location, notes, opp, scoreFor, scoreAgainst);
+
+    if (upcoming) {
+      void sendPush({
+        build: (t, lang) => ({
+          title: t(`push.event.${type}`),
+          body: `${title} · ${formatWhen(startsAt, lang)}`,
+          url: "/portal",
+          tag: "new-event",
+        }),
+      }).catch(() => {});
+    }
   }
 
   revalidatePath("/portal");
@@ -69,10 +98,11 @@ export async function deleteEvent(formData) {
   const id = Number(formData.get("id"));
   db.prepare("DELETE FROM attendance WHERE event_id = ?").run(id);
   db.prepare("DELETE FROM match_stats WHERE event_id = ?").run(id);
-  db.prepare("DELETE FROM events WHERE id = ?").run(id);
   db.prepare("DELETE FROM checkins WHERE event_id = ?").run(id);
+  db.prepare("DELETE FROM events WHERE id = ?").run(id);
 
   revalidatePath("/portal");
   revalidatePath("/fixtures");
+  revalidatePath("/stats");
   revalidatePath("/admin/events");
 }

@@ -82,6 +82,9 @@ export default async function AdminPage({ searchParams }) {
           <Link href="/admin/feedback" className={linkStyle}>
             💡 Feedback{newFeedback > 0 ? ` (${newFeedback} new)` : ""}
           </Link>
+           <Link href="/admin/notify" className={linkStyle}>
+            🔔 Notify
+          </Link>
              <Link href="/admin/media" className={linkStyle}>
             📸 Gallery
           </Link>

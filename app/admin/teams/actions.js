@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { POSITIONS } from "@/lib/positions";
+import { sendPush } from "@/lib/push";
 
 // Rebuilds the teams from scratch, keeping only the fields we expect
 function cleanTeams(raw) {
@@ -62,6 +63,10 @@ export async function postTeams(prevState, formData) {
     `INSERT INTO announcements (title, body, visibility, kind, data)
      VALUES (?, ?, 'players', 'teams', ?)`
   ).run(title, body, JSON.stringify(data));
+
+    void sendPush({
+    build: (t) => ({ title: t("push.teams"), body: title, url: "/portal", tag: "teams" }),
+  }).catch(() => {});
 
   revalidatePath("/portal");
   revalidatePath("/admin/news");

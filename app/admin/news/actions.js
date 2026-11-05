@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { sendPush } from "@/lib/push";
 
 export async function saveAnnouncement(prevState, formData) {
   await requireAdmin();
@@ -22,10 +23,20 @@ export async function saveAnnouncement(prevState, formData) {
     db.prepare(
       "UPDATE announcements SET title = ?, body = ?, visibility = ? WHERE id = ?"
     ).run(title, body, visibility, id);
-  } else {
+    } else {
     db.prepare(
       "INSERT INTO announcements (title, body, visibility) VALUES (?, ?, ?)"
     ).run(title, body, visibility);
+
+    // Phone alert for the players (editing an old post sends nothing)
+    void sendPush({
+      build: (t) => ({
+        title: t("push.announcement"),
+        body: title,
+        url: "/portal",
+        tag: "announcement",
+      }),
+    }).catch(() => {});
   }
 
   revalidatePath("/news");

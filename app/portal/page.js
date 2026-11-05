@@ -15,6 +15,7 @@ import PlayerPhoto from "@/components/PlayerPhoto";
 import TeamCards from "@/components/TeamCards";
 import { logout } from "../login/actions";
 import { setAttendance, vote, claimPaid } from "./actions";
+import PushToggle from "@/components/PushToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -168,6 +169,7 @@ export default async function PortalPage() {
             <h1 className="text-3xl font-bold">{t("portal.welcome", { name: player.name })}</h1>
             <p className="mt-1 text-neutral-400">{t("portal.welcomeSub")}</p>
           </div>
+          <PushToggle publicKey={process.env.VAPID_PUBLIC_KEY ?? ""} />
 
           <section>
             <h2 className="text-xl font-semibold text-red-500">{t("portal.upcoming")}</h2>
