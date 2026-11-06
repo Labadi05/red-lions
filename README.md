@@ -43,6 +43,7 @@ Each player has an individual account created by the captain.
 - **Announcements**: public and players-only posts, including internal-game team cards with penalty shooting order.
 - **Inbox**: private messages, tasks, to-dos, punishments and rewards from the captain, with "mark as done" and an unread badge. Players can also write suggestions, messages or problems to the captain, follow their status and read the captain's reply.
 - **Gallery**: includes the players-only photos and clips.
+-  **Phone notifications**: players can turn on alerts for new announcements, events and schedule changes, polls, lineups, messages and tasks, payments and replies to their suggestions. Alerts never include private amounts.
 
 ## Captain's dashboard
 
@@ -62,6 +63,7 @@ Each player has an individual account created by the captain.
 - **Gallery manager**: upload photos (up to 10 at a time) and video clips, add video links, switch items between public and players-only, delete.
 - **Site info**: social links, contact details, team story and payment details.
 - **Security log**: failed login attempts from the last 7 days.
+- **Notify**: send a custom alert to everyone or selected players, and see how many players have notifications on.
 
 ## Security and privacy
 
