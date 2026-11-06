@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { sendPush } from "@/lib/push";
 
 export async function openMotmVote(prevState, formData) {
   await requireAdmin();
@@ -50,6 +51,15 @@ export async function openMotmVote(prevState, formData) {
     );
   });
   create();
+
+    void sendPush({
+    build: (t) => ({
+      title: t("push.motm"),
+      body: event.title,
+      url: "/portal",
+      tag: `motm-${eventId}`,
+    }),
+  }).catch(() => {});
 
   revalidatePath("/admin/events");
   revalidatePath("/admin/polls");

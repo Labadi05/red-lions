@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { CATEGORIES, parseMoney, formatMoney } from "@/lib/moneyFormat";
+import { sendPush } from "@/lib/push";
 
 function refresh() {
   revalidatePath("/admin/money");
@@ -61,6 +62,12 @@ export async function createCharge(prevState, formData) {
   });
   create();
 
+    // Alert only the players who were charged (the amount is not in the alert)
+  void sendPush({
+    playerIds: ids,
+    build: (t) => ({ title: t("push.payment"), body: title, url: "/portal", tag: "payment" }),
+  }).catch(() => {});
+
   refresh();
   const total = amounts.reduce((a, b) => a + b, 0);
   return {
@@ -74,21 +81,60 @@ export async function setPaid(formData) {
   const playerId = Number(formData.get("playerId"));
   const paid = formData.get("paid") === "1";
 
+  const before = db
+    .prepare("SELECT paid_at FROM charge_items WHERE charge_id = ? AND player_id = ?")
+    .get(chargeId, playerId);
+
   db.prepare(
     `UPDATE charge_items
      SET paid_at = CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE NULL END,
          claimed_at = CASE WHEN ? = 1 THEN claimed_at ELSE NULL END
      WHERE charge_id = ? AND player_id = ?`
   ).run(paid ? 1 : 0, paid ? 1 : 0, chargeId, playerId);
+
+  // Tell the player their payment was confirmed
+  if (paid && before && !before.paid_at) {
+    const charge = db.prepare("SELECT title FROM charges WHERE id = ?").get(chargeId);
+    void sendPush({
+      playerIds: [playerId],
+      build: (t) => ({
+        title: t("push.paymentConfirmed"),
+        body: charge?.title ?? "",
+        url: "/portal",
+        tag: `paid-${chargeId}`,
+      }),
+    }).catch(() => {});
+  }
+
   refresh();
 }
 
 export async function markAllPaid(formData) {
   await requireAdmin();
   const chargeId = Number(formData.get("chargeId"));
+
+  const waiting = db
+    .prepare("SELECT player_id FROM charge_items WHERE charge_id = ? AND paid_at IS NULL")
+    .all(chargeId)
+    .map((r) => r.player_id);
+
   db.prepare(
     "UPDATE charge_items SET paid_at = CURRENT_TIMESTAMP WHERE charge_id = ? AND paid_at IS NULL"
   ).run(chargeId);
+
+  if (waiting.length > 0) {
+    const charge = db.prepare("SELECT title FROM charges WHERE id = ?").get(chargeId);
+    void sendPush({
+      playerIds: waiting,
+      build: (t) => ({
+        title: t("push.paymentConfirmed"),
+        body: charge?.title ?? "",
+        url: "/portal",
+        tag: `paid-${chargeId}`,
+      }),
+    }).catch(() => {});
+  }
+
   refresh();
 }
 

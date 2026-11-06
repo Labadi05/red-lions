@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { FORMATIONS, slotCount } from "@/lib/formations";
+import { sendPush } from "@/lib/push";
 
 export async function saveLineup(prevState, formData) {
   await requireAdmin();
@@ -12,7 +13,11 @@ export async function saveLineup(prevState, formData) {
   const formation = String(formData.get("formation") || "");
   const published = formData.get("published") === "on";
 
-  const event = db.prepare("SELECT id, type FROM events WHERE id = ?").get(eventId);
+  const event = db
+    .prepare(
+      "SELECT id, type, title, formation, lineup, bench, lineup_published FROM events WHERE id = ?"
+    )
+    .get(eventId);
   if (!event || event.type !== "match") return { error: "Match not found." };
   if (!FORMATIONS[formation]) return { error: "Choose a formation." };
 
@@ -36,16 +41,37 @@ export async function saveLineup(prevState, formData) {
     return { error: `Fill all ${n} positions before publishing.` };
   }
 
+  const lineupJson = JSON.stringify(slots);
+  const benchJson = JSON.stringify(bench);
+
   db.prepare(
     "UPDATE events SET formation = ?, lineup = ?, bench = ?, lineup_published = ? WHERE id = ?"
-  ).run(formation, JSON.stringify(slots), JSON.stringify(bench), published ? 1 : 0, eventId);
+  ).run(formation, lineupJson, benchJson, published ? 1 : 0, eventId);
+
+  // Alert the players when the lineup is published, or changed after being published
+  if (published) {
+    const wasPublished = event.lineup_published === 1;
+    const changed =
+      event.formation !== formation || event.lineup !== lineupJson || event.bench !== benchJson;
+
+    if (!wasPublished || changed) {
+      void sendPush({
+        build: (t) => ({
+          title: wasPublished ? t("push.lineupUpdated") : t("push.lineup"),
+          body: event.title,
+          url: "/portal",
+          tag: `lineup-${eventId}`,
+        }),
+      }).catch(() => {});
+    }
+  }
 
   revalidatePath("/portal");
   revalidatePath(`/admin/events/${eventId}/lineup`);
 
   return {
     ok: published
-      ? "Saved and published to players ✅"
+      ? "Saved and published to players ✅ They were notified."
       : "Saved as a draft. Players can't see it yet.",
   };
 }

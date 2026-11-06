@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { nowInJinzhou } from "@/lib/format";
+import { nowInJinzhou, formatWhen } from "@/lib/format";
+import { sendPush } from "@/lib/push";
 
 function refresh() {
   revalidatePath("/admin/polls");
@@ -52,6 +53,16 @@ export async function createPoll(prevState, formData) {
     labels.forEach((label, i) => insert.run(result.lastInsertRowid, label, i));
   });
   create();
+    void sendPush({
+    build: (t, lang) => ({
+      title: t("push.poll"),
+      body: closesAt
+        ? `${question} · ${t("push.voteBefore", { when: formatWhen(closesAt, lang) })}`
+        : question,
+      url: "/portal",
+      tag: "poll",
+    }),
+  }).catch(() => {});
 
   refresh();
   redirect("/admin/polls");
