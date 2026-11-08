@@ -45,3 +45,99 @@ html[dir="rtl"] body {
 body:has([data-admin]) .lang-switch {
   display: none;
 }
+
+/* ===== Home page animations ===== */
+@keyframes rl-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+@keyframes rl-glow {
+  0%, 100% { filter: drop-shadow(0 0 26px rgba(199, 10, 8, 0.55)); }
+  50% { filter: drop-shadow(0 0 34px rgba(18, 140, 80, 0.65)); }
+}
+@keyframes rl-fade-up {
+  from { opacity: 0; transform: translateY(26px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes rl-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes rl-blob-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(60px, 40px) scale(1.15); }
+}
+@keyframes rl-blob-b {
+  0%, 100% { transform: translate(0, 0) scale(1.1); }
+  50% { transform: translate(-70px, -30px) scale(0.95); }
+}
+@keyframes rl-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes rl-shine {
+  0% { transform: translateX(-120%); }
+  60%, 100% { transform: translateX(120%); }
+}
+@keyframes rl-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(232, 53, 46, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(232, 53, 46, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(232, 53, 46, 0); }
+}
+
+.rl-float { animation: rl-float 6s ease-in-out infinite; }
+.rl-glow { animation: rl-glow 5s ease-in-out infinite; }
+.rl-spin { animation: rl-spin 90s linear infinite; }
+.rl-live { animation: rl-pulse 2s infinite; }
+
+.rl-fade-up { animation: rl-fade-up 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.rl-d1 { animation-delay: 0.1s; }
+.rl-d2 { animation-delay: 0.25s; }
+.rl-d3 { animation-delay: 0.4s; }
+.rl-d4 { animation-delay: 0.55s; }
+
+/* Scrolling band: always left-to-right so the loop never breaks */
+.rl-marquee { direction: ltr; overflow: hidden; }
+.rl-marquee-track { display: flex; width: max-content; animation: rl-marquee 28s linear infinite; }
+
+/* Soft coloured glows in the hero background */
+.rl-blob { position: absolute; border-radius: 9999px; filter: blur(80px); pointer-events: none; }
+.rl-blob-green {
+  width: 420px; height: 420px; background: #0f8a4c; opacity: 0.45;
+  inset-inline-start: -120px; top: 40px;
+  animation: rl-blob-a 16s ease-in-out infinite;
+}
+.rl-blob-red {
+  width: 460px; height: 460px; background: #c70a08; opacity: 0.5;
+  inset-inline-end: -140px; bottom: 20px;
+  animation: rl-blob-b 19s ease-in-out infinite;
+}
+
+/* A light sweeping across a button */
+.rl-shine { position: relative; overflow: hidden; }
+.rl-shine::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: rl-shine 3.5s ease-in-out infinite;
+}
+
+.rl-tile { transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; }
+.rl-tile:hover { transform: translateY(-6px); box-shadow: 0 14px 30px -12px rgba(199, 10, 8, 0.55); }
+
+/* Sections fade in as you scroll (browsers that support it; others show them at once) */
+@supports (animation-timeline: view()) {
+  .rl-reveal {
+    animation: rl-fade-up linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 35%;
+  }
+}
+
+/* Respect "reduce motion" settings */
+@media (prefers-reduced-motion: reduce) {
+  .rl-float, .rl-glow, .rl-spin, .rl-live, .rl-fade-up, .rl-reveal,
+  .rl-marquee-track, .rl-blob, .rl-shine::after {
+    animation: none !important;
+  }
+  .rl-tile { transition: none; }
+}
