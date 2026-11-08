@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import db from "@/lib/db";
 import PlayerPhoto from "@/components/PlayerPhoto";
+import PublicShell from "@/components/PublicShell";
 import { getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -37,43 +37,42 @@ export default async function PlayerProfilePage({ params }) {
   ];
 
   return (
-    <main className="min-h-screen bg-neutral-950 px-6 py-12 text-white">
-      <div className="mx-auto max-w-4xl">
-        <Link href="/squad" className="text-sm text-red-400 hover:underline">
-          {t("common.backSquad")}
-        </Link>
+    <PublicShell
+      back={{ href: "/squad", label: t("common.backSquad") }}
+      width="max-w-4xl"
+    >
+      <div className="rl-fade-up grid gap-8 md:grid-cols-[320px_1fr]">
+        <div className="overflow-hidden rounded-2xl border-2 border-gold shadow-[0_0_50px_-12px_rgba(199,10,8,0.7)]">
+          <PlayerPhoto player={player} full className="aspect-square w-full text-7xl" />
+        </div>
 
-        <div className="mt-6 grid gap-8 md:grid-cols-[320px_1fr]">
-          <div className="overflow-hidden rounded-2xl border border-neutral-800">
-            <PlayerPhoto player={player} full className="aspect-square w-full text-7xl" />
-          </div>
+        <div>
+          <div className="text-7xl font-black text-red-600">{player.number}</div>
+          <h1 className="mt-1 text-4xl font-black">{player.name}</h1>
+          <p className="mt-2 flex items-center gap-3 text-neutral-300">
+            {t(`pos.${player.position}`)}
+            {player.is_captain === 1 && (
+              <span className="rounded-md bg-gold px-2 py-0.5 text-xs font-black text-neutral-950">
+                {t("common.captain")}
+              </span>
+            )}
+          </p>
 
-          <div>
-            <div className="text-7xl font-black text-red-600">{player.number}</div>
-            <h1 className="mt-1 text-4xl font-bold">{player.name}</h1>
-            <p className="mt-2 flex items-center gap-3 text-neutral-400">
-              {t(`pos.${player.position}`)}
-              {player.is_captain === 1 && (
-                <span className="rounded-md bg-gold px-2 py-0.5 text-xs font-black text-neutral-950">
-                  {t("common.captain")}
-                </span>
-              )}
-            </p>
-
-            <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {boxes.map(([label, value]) => (
-                <div
-                  key={label}
-                  className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 text-center"
-                >
-                  <div className="text-3xl font-black">{value}</div>
-                  <div className="mt-1 text-xs text-neutral-400">{label}</div>
-                </div>
-              ))}
-            </div>
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {boxes.map(([label, value], i) => (
+              <div
+                key={label}
+                className={`rounded-xl border border-neutral-800 border-t-4 bg-neutral-900 p-4 text-center ${
+                  i % 2 === 0 ? "!border-t-red-600" : "!border-t-emerald-500"
+                }`}
+              >
+                <div className="text-3xl font-black">{value}</div>
+                <div className="mt-1 text-xs text-neutral-400">{label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
-    </main>
+    </PublicShell>
   );
 }

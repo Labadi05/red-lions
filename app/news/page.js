@@ -1,5 +1,5 @@
-import Link from "next/link";
 import db from "@/lib/db";
+import PublicShell from "@/components/PublicShell";
 import { getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -12,28 +12,24 @@ export default async function NewsPage() {
     .all();
 
   return (
-    <main className="min-h-screen bg-neutral-950 px-6 py-12 text-white">
-      <div className="mx-auto max-w-3xl">
-        <Link href="/" className="text-sm text-red-400 hover:underline">
-          {t("common.backHome")}
-        </Link>
-        <h1 className="mt-4 text-4xl font-bold">{t("news.title")}</h1>
-        <p className="mt-2 text-neutral-400">{t("news.subtitle")}</p>
-
-        <div className="mt-8 space-y-4">
-          {items.length === 0 && <p className="text-neutral-500">{t("news.empty")}</p>}
-          {items.map((a) => (
-            <article
-              key={a.id}
-              className="rounded-xl border border-neutral-800 bg-neutral-900 p-5"
-            >
-              <div className="text-xs text-neutral-500">{a.created_at.slice(0, 10)}</div>
-              <h2 className="mt-1 text-xl font-semibold">{a.title}</h2>
-              <p className="mt-2 whitespace-pre-wrap text-neutral-300">{a.body}</p>
-            </article>
-          ))}
-        </div>
+    <PublicShell title={t("news.title")} subtitle={t("news.subtitle")} width="max-w-3xl">
+      <div className="space-y-4">
+        {items.length === 0 && <p className="text-neutral-400">{t("news.empty")}</p>}
+        {items.map((a, i) => (
+          <article
+            key={a.id}
+            className={`rl-reveal rounded-xl border border-neutral-800 border-s-4 bg-neutral-900 p-5 ${
+              i % 2 === 0 ? "!border-s-red-600" : "!border-s-emerald-500"
+            }`}
+          >
+            <div className="text-xs text-neutral-400" dir="ltr">
+              {a.created_at.slice(0, 10)}
+            </div>
+            <h2 className="mt-1 text-xl font-bold">{a.title}</h2>
+            <p className="mt-2 whitespace-pre-wrap text-neutral-300">{a.body}</p>
+          </article>
+        ))}
       </div>
-    </main>
+    </PublicShell>
   );
 }

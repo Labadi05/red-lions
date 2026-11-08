@@ -141,3 +141,15 @@ body:has([data-admin]) .lang-switch {
   }
   .rl-tile { transition: none; }
 }
+
+/* ===== Shared look for public pages ===== */
+.rl-blob { z-index: -1; }
+
+/* Existing cards become soft glass inside the page frame */
+.rl-shell .bg-neutral-900 {
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(6px);
+}
+.rl-shell .border-neutral-800 {
+  border-color: rgba(255, 255, 255, 0.1);
+}
