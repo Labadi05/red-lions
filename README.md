@@ -117,7 +117,7 @@ Open http://localhost:3000.
 
 On the first run the database is created automatically in `data/`, the squad is loaded, and a captain account is created with the username `captain` and the `ADMIN_PASSWORD` you set. Player accounts are then created from the captain's dashboard.
 
-> Never commit `.env.local` or the `data/` folder. They contain secrets, player logins and uploaded files.
+> Watch and remenber that  `.env.local` or the `data/` folder contain secrets, player logins and uploaded files , Do not share !!.
 
 ## Languages
 
@@ -155,7 +155,6 @@ data/             SQLite database and uploads (not committed)
 ## Notes
 
 Built for a team in mainland China: the site avoids Google-dependent services, and notifications target **WeChat** (for now through a "Copy for WeChat" button).
->>>>>>> 7210a837dac49fe67f3a51e611e6af970a822aae
 
 ## Author
 
