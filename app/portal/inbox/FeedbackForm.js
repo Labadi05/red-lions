@@ -6,7 +6,7 @@ import { useT } from "@/components/I18nProvider";
 import { sendFeedback } from "./actions";
 
 const input =
-  "mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-red-600";
+  "mt-1 w-full rounded-lg border border-[#1c3a29] bg-[#050d08] px-3 py-2 text-sm outline-none focus:border-gold";
 
 export default function FeedbackForm() {
   const t = useT();
@@ -15,9 +15,9 @@ export default function FeedbackForm() {
   return (
     <form
       action={formAction}
-      className="rounded-xl border border-neutral-800 bg-neutral-900 p-5"
+      className="rounded-2xl border border-[#1c3a29] bg-[#0a1810] p-5"
     >
-      <label className="block text-sm text-neutral-400">{t("feedback.type")}</label>
+      <label className="block text-sm text-neutral-300">{t("feedback.type")}</label>
       <select name="kind" defaultValue="suggestion" className={input}>
         {Object.entries(FEEDBACK_KINDS).map(([key, k]) => (
           <option key={key} value={key}>
@@ -26,10 +26,10 @@ export default function FeedbackForm() {
         ))}
       </select>
 
-      <label className="mt-4 block text-sm text-neutral-400">{t("feedback.title")}</label>
+      <label className="mt-4 block text-sm text-neutral-300">{t("feedback.title")}</label>
       <input name="subject" required className={input} />
 
-      <label className="mt-4 block text-sm text-neutral-400">{t("feedback.message")}</label>
+      <label className="mt-4 block text-sm text-neutral-300">{t("feedback.message")}</label>
       <textarea name="body" required rows={5} className={input} />
 
       {state?.error && (
@@ -40,7 +40,7 @@ export default function FeedbackForm() {
       <button
         type="submit"
         disabled={pending}
-        className="mt-5 rounded-full bg-red-600 px-6 py-2 font-semibold hover:bg-red-500 disabled:opacity-50"
+        className="rl-shine mt-5 rounded-full bg-red-600 px-6 py-2 font-bold hover:bg-red-500 disabled:opacity-50"
       >
         {pending ? t("feedback.sending") : t("feedback.send")}
       </button>
