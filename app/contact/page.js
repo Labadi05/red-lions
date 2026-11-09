@@ -1,4 +1,4 @@
-import Link from "next/link";
+import PublicShell from "@/components/PublicShell";
 import { getSettings } from "@/lib/settings";
 import { getT } from "@/lib/i18n";
 
@@ -19,76 +19,77 @@ export default async function ContactPage() {
   const whatsappDigits = s.whatsapp.replace(/\D/g, "");
   const hasContact = s.wechat_id || s.whatsapp || s.email;
 
-  const card = "rounded-xl border border-neutral-800 bg-neutral-900 p-5";
+  const card =
+    "rl-tile rl-reveal block rounded-xl border border-neutral-800 border-s-4 bg-neutral-900 p-5";
 
   return (
-    <main className="min-h-screen bg-neutral-950 px-6 py-12 text-white">
-      <div className="mx-auto max-w-2xl">
-        <Link href="/" className="text-sm text-red-400 hover:underline">
-          {t("common.backHome")}
-        </Link>
-        <h1 className="mt-4 text-4xl font-bold">{t("contact.title")} 📬</h1>
-        {s.contact_note && (
-          <p className="mt-3 whitespace-pre-wrap text-neutral-300">{s.contact_note}</p>
-        )}
+    <PublicShell title={`${t("contact.title")} 📬`} width="max-w-2xl">
+      {s.contact_note && (
+        <p className="-mt-2 mb-8 whitespace-pre-wrap text-neutral-300">{s.contact_note}</p>
+      )}
 
-        {hasContact && (
-          <div className="mt-8 space-y-3">
-            {s.wechat_id && (
-              <div className={card}>
-                <div className="text-xs text-neutral-500">💬 {t("contact.wechat")}</div>
-                <div className="mt-1 text-lg font-semibold" dir="ltr">
-                  {s.wechat_id}
-                </div>
+      {hasContact && (
+        <div className="space-y-3">
+          {s.wechat_id && (
+            <div className={`${card} !border-s-emerald-500`}>
+              <div className="text-xs text-neutral-400">💬 {t("contact.wechat")}</div>
+              <div className="mt-1 text-lg font-semibold" dir="ltr">
+                {s.wechat_id}
               </div>
-            )}
-            {s.whatsapp && (
+            </div>
+          )}
+          {s.whatsapp && (
+            <a
+              href={`https://wa.me/${whatsappDigits}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${card} !border-s-red-600 hover:border-red-600`}
+            >
+              <div className="text-xs text-neutral-400">📱 {t("contact.whatsapp")}</div>
+              <div className="mt-1 text-lg font-semibold" dir="ltr">
+                {s.whatsapp}
+              </div>
+            </a>
+          )}
+          {s.email && (
+            <a
+              href={`mailto:${s.email}`}
+              className={`${card} !border-s-emerald-500 hover:border-red-600`}
+            >
+              <div className="text-xs text-neutral-400">✉️ {t("contact.email")}</div>
+              <div className="mt-1 text-lg font-semibold" dir="ltr">
+                {s.email}
+              </div>
+            </a>
+          )}
+        </div>
+      )}
+
+      {socials.length > 0 && (
+        <>
+          <h2 className="mt-10 flex items-center gap-3 text-xl font-bold">
+            <span className="h-6 w-1.5 rounded-full bg-red-600" />
+            {t("contact.follow")}
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {socials.map((x) => (
               <a
-                href={`https://wa.me/${whatsappDigits}`}
+                key={x.label}
+                href={x.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`block hover:border-red-600 ${card}`}
+                className="rl-tile rounded-full border border-white/20 px-5 py-2 text-sm hover:border-red-600 hover:bg-red-600/20"
               >
-                <div className="text-xs text-neutral-500">📱 {t("contact.whatsapp")}</div>
-                <div className="mt-1 text-lg font-semibold" dir="ltr">
-                  {s.whatsapp}
-                </div>
+                {x.icon} {x.label}
               </a>
-            )}
-            {s.email && (
-              <a href={`mailto:${s.email}`} className={`block hover:border-red-600 ${card}`}>
-                <div className="text-xs text-neutral-500">✉️ {t("contact.email")}</div>
-                <div className="mt-1 text-lg font-semibold" dir="ltr">
-                  {s.email}
-                </div>
-              </a>
-            )}
+            ))}
           </div>
-        )}
+        </>
+      )}
 
-        {socials.length > 0 && (
-          <>
-            <h2 className="mt-10 text-xl font-semibold text-red-500">{t("contact.follow")}</h2>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {socials.map((x) => (
-                <a
-                  key={x.label}
-                  href={x.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-full border border-neutral-700 px-5 py-2 text-sm hover:border-red-600"
-                >
-                  {x.icon} {x.label}
-                </a>
-              ))}
-            </div>
-          </>
-        )}
-
-        {!hasContact && socials.length === 0 && (
-          <p className="mt-8 text-neutral-500">{t("contact.soon")}</p>
-        )}
-      </div>
-    </main>
+      {!hasContact && socials.length === 0 && (
+        <p className="text-neutral-400">{t("contact.soon")}</p>
+      )}
+    </PublicShell>
   );
 }
