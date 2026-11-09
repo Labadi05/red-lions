@@ -54,10 +54,11 @@ export async function vote(formData) {
     if (me?.player_id === option.player_id) return;
   }
 
+  // One vote only: the first choice is final. A second attempt does nothing.
   db.prepare(
     `INSERT INTO poll_votes (poll_id, user_id, option_id)
      VALUES (?, ?, ?)
-     ON CONFLICT(poll_id, user_id) DO UPDATE SET option_id = excluded.option_id`
+     ON CONFLICT(poll_id, user_id) DO NOTHING`
   ).run(pollId, session.uid, optionId);
 
   revalidatePath("/portal");

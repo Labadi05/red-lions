@@ -18,6 +18,7 @@ import PlayerCard from "@/components/portal/PlayerCard";
 import Ring from "@/components/portal/Ring";
 import { logout } from "../login/actions";
 import { setAttendance, vote, claimPaid } from "./actions";
+import VoteForm from "@/components/portal/VoteForm";
 
 export const dynamic = "force-dynamic";
 
@@ -449,7 +450,7 @@ export default async function PortalPage() {
           </div>
         </section>
 
-        <section className="space-y-4">
+               <section className="space-y-4">
           <SectionTitle id="polls">{t("portal.polls")}</SectionTitle>
           {polls.length === 0 && <p className="text-neutral-400">{t("portal.noPolls")}</p>}
           <div className="grid gap-4 lg:grid-cols-2">
@@ -458,6 +459,7 @@ export default async function PortalPage() {
                 poll.kind === "motm" && poll.event_id && eventTitles[poll.event_id]
                   ? t("portal.motmQuestion", { title: eventTitles[poll.event_id] })
                   : poll.question;
+              const myOption = poll.options.find((o) => o.id === poll.myVote);
 
               return (
                 <div key={poll.id} className={panel}>
@@ -478,55 +480,57 @@ export default async function PortalPage() {
                     </span>
                   </div>
 
-                  {!poll.closed && (
-                    <form action={vote} className="mt-4 flex flex-wrap gap-2">
-                      <input type="hidden" name="pollId" value={poll.id} />
-                      {poll.options.map((o) => {
-                        const isSelf = poll.kind === "motm" && o.player_id === me.player_id;
-                        return (
-                          <button
-                            key={o.id}
-                            name="optionId"
-                            value={o.id}
-                            disabled={isSelf}
-                            title={isSelf ? t("portal.cantVoteSelf") : undefined}
-                            className={`rounded-lg border px-4 py-2 text-sm ${
-                              isSelf
-                                ? "cursor-not-allowed border-neutral-800 text-neutral-600"
-                                : poll.myVote === o.id
-                                ? "border-red-600 bg-red-600 font-semibold"
-                                : "border-neutral-700 hover:border-red-600"
-                            }`}
-                          >
-                            {o.label}
-                          </button>
-                        );
-                      })}
-                    </form>
-                  )}
-
-                  {!poll.closed && poll.myVote && (
-                    <p className="mt-2 text-xs text-neutral-400">{t("portal.canChange")}</p>
-                  )}
+                  {/* Not voted yet: only the choices, no results */}
                   {!poll.closed && !poll.myVote && (
-                    <p className="mt-2 text-xs text-neutral-400">{t("portal.resultsAfter")}</p>
+                    <>
+                      <VoteForm
+                        action={vote}
+                        pollId={poll.id}
+                        options={poll.options.map((o) => ({
+                          id: o.id,
+                          label: o.label,
+                          disabled: poll.kind === "motm" && o.player_id === me.player_id,
+                        }))}
+                      />
+                      <p className="mt-2 text-xs text-neutral-400">{t("portal.voteOnce")}</p>
+                    </>
                   )}
 
+                  {/* Voted: the choice is locked */}
+                  {myOption && (
+                    <p className="mt-3 text-sm">
+                      <span className="text-neutral-400">{t("portal.yourVote")}: </span>
+                      <span className="font-bold text-gold">{myOption.label}</span>
+                    </p>
+                  )}
+                  {!poll.closed && poll.myVote && (
+                    <p className="mt-1 text-xs text-neutral-400">{t("portal.voteFinal")}</p>
+                  )}
+
+                  {/* Results: after voting, or once the poll has closed */}
                   {(poll.closed || poll.myVote) && (
                     <div className="mt-4 space-y-3">
                       {poll.options.map((o) => {
                         const pct = poll.total ? Math.round((100 * o.count) / poll.total) : 0;
+                        const mine = o.id === poll.myVote;
                         return (
                           <div key={o.id}>
                             <div className="flex items-center justify-between text-sm">
-                              <span>{o.label}</span>
+                              <span className={mine ? "font-bold text-gold" : ""}>
+                                {mine ? "✓ " : ""}
+                                {o.label}
+                              </span>
                               <span className="text-neutral-400" dir="ltr">
                                 {o.count} · {pct}%
                               </span>
                             </div>
                             <div className="mt-1 h-2 overflow-hidden rounded-full bg-neutral-800">
                               <div
-                                className="h-full bg-gradient-to-r from-red-600 to-emerald-500"
+                                className={`h-full ${
+                                  mine
+                                    ? "bg-gold"
+                                    : "bg-gradient-to-r from-red-600 to-emerald-500"
+                                }`}
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
@@ -543,7 +547,7 @@ export default async function PortalPage() {
             })}
           </div>
         </section>
-
+        
         <div className="grid gap-12 lg:grid-cols-2">
           <section className="space-y-4">
             <SectionTitle id="attendance">{t("portal.attendance")}</SectionTitle>
