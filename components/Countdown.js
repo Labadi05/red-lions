@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useT } from "@/components/I18nProvider";
 
-// Counts down to a match. Event times are stored in Jinzhou time (UTC+8).
-export default function Countdown({ startsAt }) {
+// Counts down to an event. Event times are stored in Jinzhou time (UTC+8).
+// light: dark boxes for use on a light background (the ticket)
+export default function Countdown({ startsAt, light = false }) {
   const t = useT();
   const [left, setLeft] = useState(null);
 
@@ -26,12 +27,14 @@ export default function Countdown({ startsAt }) {
     [s % 60, t("home.seconds")],
   ];
 
+  const box = light ? "bg-neutral-900 text-white" : "bg-black/30";
+
   return (
     <div className="flex gap-2" dir="ltr">
       {parts.map(([n, label]) => (
         <div
           key={label}
-          className="min-w-[3.6rem] rounded-lg bg-black/30 px-2 py-2 text-center"
+          className={`min-w-[3.6rem] rounded-lg px-2 py-2 text-center ${box}`}
         >
           <div className="text-2xl font-black tabular-nums">{String(n).padStart(2, "0")}</div>
           <div className="text-[10px] uppercase text-neutral-400">{label}</div>

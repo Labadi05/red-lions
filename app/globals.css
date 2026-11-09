@@ -153,3 +153,57 @@ body:has([data-admin]) .lang-switch {
 .rl-shell .border-neutral-800 {
   border-color: rgba(255, 255, 255, 0.1);
 }
+
+/* ===== Players' portal ("locker room") ===== */
+html { scroll-behavior: smooth; }
+
+.rl-locker {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(18, 168, 95, 0.18), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(199, 10, 8, 0.14), transparent 55%),
+    #050d08;
+}
+
+/* The football card tilts on hover and a light sweeps across it */
+.rl-tilt { transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.rl-tilt:hover { transform: perspective(900px) rotateY(-8deg) rotateX(4deg) scale(1.02); }
+@keyframes rl-card-shine {
+  0% { transform: translateX(-130%) skewX(-20deg); }
+  55%, 100% { transform: translateX(260%) skewX(-20deg); }
+}
+.rl-card-shine::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: rl-card-shine 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* The matchday ticket: notches cut out on both sides, above the stub */
+.rl-ticket {
+  --notch: 13px;
+  border-radius: 20px;
+  -webkit-mask:
+    radial-gradient(circle var(--notch) at 0 calc(100% - var(--stub)), #0000 97%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--notch) at 100% calc(100% - var(--stub)), #0000 97%, #000) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle var(--notch) at 0 calc(100% - var(--stub)), #0000 97%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--notch) at 100% calc(100% - var(--stub)), #0000 97%, #000) right / 51% 100% no-repeat;
+}
+
+/* The attendance ring draws itself */
+@keyframes rl-ring-draw { from { stroke-dasharray: 0 999; } }
+.rl-ring { animation: rl-ring-draw 1.4s ease-out both; }
+
+.rl-tabbar { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Arabic letters must stay joined: no letter spacing */
+[dir="rtl"] [class*="tracking-"] { letter-spacing: 0 !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .rl-card-shine::after, .rl-ring { animation: none !important; }
+  .rl-tilt:hover { transform: none; }
+}

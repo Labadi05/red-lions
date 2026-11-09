@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import db from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { TYPES, formatWhen, nowInJinzhou } from "@/lib/format";
-import { getMyAttendance, rateColor } from "@/lib/attendance";
+import { getMyAttendance } from "@/lib/attendance";
 import { getPolls } from "@/lib/polls";
 import { getUnreadCount } from "@/lib/messages";
 import { getMyPayments, getPaymentInfo } from "@/lib/money";
@@ -11,16 +11,51 @@ import { CATEGORIES, formatMoney } from "@/lib/moneyFormat";
 import { getT } from "@/lib/i18n";
 import Pitch from "@/components/Pitch";
 import Logo from "@/components/Logo";
-import PlayerPhoto from "@/components/PlayerPhoto";
 import TeamCards from "@/components/TeamCards";
+import Countdown from "@/components/Countdown";
+import PushToggle from "@/components/PushToggle";
+import PlayerCard from "@/components/portal/PlayerCard";
+import Ring from "@/components/portal/Ring";
 import { logout } from "../login/actions";
 import { setAttendance, vote, claimPaid } from "./actions";
-import PushToggle from "@/components/PushToggle";
 
 export const dynamic = "force-dynamic";
 
-const navLink =
-  "rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-2 text-sm hover:border-gold";
+const panel = "rounded-2xl border border-[#1c3a29] bg-[#0a1810] p-5";
+const ringColor = (rate) => (rate >= 80 ? "#34d399" : rate >= 50 ? "#facc15" : "#f87171");
+
+function PitchLines() {
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.07]"
+      viewBox="0 0 800 400"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden
+    >
+      <g fill="none" stroke="#fff" strokeWidth="2">
+        <rect x="20" y="20" width="760" height="360" rx="4" />
+        <line x1="400" y1="20" x2="400" y2="380" />
+        <circle cx="400" cy="200" r="55" />
+        <rect x="20" y="110" width="110" height="180" />
+        <rect x="670" y="110" width="110" height="180" />
+        <rect x="20" y="150" width="45" height="100" />
+        <rect x="735" y="150" width="45" height="100" />
+      </g>
+    </svg>
+  );
+}
+
+function SectionTitle({ id, children }) {
+  return (
+    <h2
+      id={id}
+      className="flex scroll-mt-24 items-center gap-3 text-sm font-black uppercase tracking-[0.25em] text-gold"
+    >
+      <span className="h-px w-8 bg-gold/60" />
+      {children}
+    </h2>
+  );
+}
 
 export default async function PortalPage() {
   const { t, lang } = await getT();
@@ -30,7 +65,7 @@ export default async function PortalPage() {
 
   const me = db
     .prepare(
-      `SELECT u.username, u.role, p.id AS player_id, p.name, p.number, p.position, p.photo
+      `SELECT u.username, u.role, p.id AS player_id, p.name, p.number, p.position, p.photo, p.is_captain
        FROM users u LEFT JOIN players p ON p.id = u.player_id
        WHERE u.id = ?`
     )
@@ -39,6 +74,16 @@ export default async function PortalPage() {
   if (!me) redirect("/login");
 
   const player = { name: me.name ?? me.username, photo: me.photo };
+
+  const pstats = me.player_id
+    ? db
+        .prepare(
+          `SELECT COALESCE(SUM(played), 0) AS apps, COALESCE(SUM(goals), 0) AS goals,
+                  COALESCE(SUM(assists), 0) AS assists, COALESCE(SUM(motm), 0) AS motm
+           FROM match_stats WHERE player_id = ?`
+        )
+        .get(me.player_id)
+    : { apps: 0, goals: 0, assists: 0, motm: 0 };
 
   const announcements = db
     .prepare("SELECT * FROM announcements ORDER BY id DESC LIMIT 30")
@@ -53,12 +98,15 @@ export default async function PortalPage() {
        ORDER BY e.starts_at ASC`
     )
     .all(session.uid, nowInJinzhou());
+  const next = events[0] ?? null;
+  const later = events.slice(1);
 
   const allPolls = getPolls(session.uid);
   const polls = [
     ...allPolls.filter((p) => !p.closed),
     ...allPolls.filter((p) => p.closed).slice(0, 3),
   ];
+  const pollsToVote = allPolls.filter((p) => !p.closed && !p.myVote).length;
   const eventTitles = Object.fromEntries(
     db.prepare("SELECT id, title FROM events").all().map((e) => [e.id, e.title])
   );
@@ -88,324 +136,458 @@ export default async function PortalPage() {
     maybe: t("portal.saidMaybe"),
     no: t("portal.saidNo"),
   };
+  const cardLabels = {
+    app: t("card.app"),
+    goals: t("card.goals"),
+    assists: t("card.assists"),
+    motm: t("card.motm"),
+  };
+
+  // The answer buttons (Coming / Maybe / Can't come), light version is for the ticket
+  const rsvp = (e, light = false) => (
+    <form action={setAttendance} className="space-y-2">
+      <input type="hidden" name="eventId" value={e.id} />
+      <input
+        name="reason"
+        defaultValue={e.my_reason ?? ""}
+        placeholder={t("portal.reasonPlaceholder")}
+        className={`w-full rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-red-600 ${
+          light
+            ? "border-neutral-400 bg-white text-neutral-900 placeholder:text-neutral-500"
+            : "border-neutral-700 bg-neutral-950 text-white"
+        }`}
+      />
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          ["yes", t("portal.coming")],
+          ["maybe", t("portal.maybe")],
+          ["no", t("portal.cantCome")],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            name="status"
+            value={value}
+            className={`rounded-lg border px-1 py-2 text-xs font-semibold leading-tight sm:text-sm ${
+              e.my_status === value
+                ? "border-red-600 bg-red-600 text-white"
+                : light
+                ? "border-neutral-500 text-neutral-800 hover:border-red-600"
+                : "border-neutral-700 hover:border-red-600"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </form>
+  );
+
+  const lineup = (e) =>
+    e.type === "match" && e.lineup_published === 1 ? (
+      <details className="mt-4" open>
+        <summary className="cursor-pointer text-sm font-bold text-gold">
+          {t("portal.lineup", { formation: e.formation })}
+        </summary>
+        <div className="mt-3">
+          <Pitch
+            formation={e.formation}
+            slotIds={JSON.parse(e.lineup)}
+            playersById={playersById}
+          />
+          {JSON.parse(e.bench).length > 0 && (
+            <p className="mt-3 text-sm text-neutral-300">
+              <span className="text-neutral-500">{t("portal.bench")} </span>
+              {JSON.parse(e.bench)
+                .map((id) =>
+                  playersById[id] ? `${playersById[id].number} ${playersById[id].name}` : null
+                )
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
+        </div>
+      </details>
+    ) : null;
+
+  const dials = [
+    {
+      href: "#attendance",
+      label: t("portal.dial.attendance"),
+      body: (
+        <Ring
+          value={mine.summary?.rate ?? 0}
+          color={ringColor(mine.summary?.rate ?? 0)}
+          size={56}
+          stroke={6}
+        >
+          {mine.summary ? `${mine.summary.rate}%` : "—"}
+        </Ring>
+      ),
+    },
+    {
+      href: "#payments",
+      label: t("portal.dial.due"),
+      body: (
+        <span
+          className={`text-2xl font-black ${money.outstanding > 0 ? "text-red-400" : "text-emerald-400"}`}
+          dir="ltr"
+        >
+          {money.outstanding > 0 ? formatMoney(money.outstanding) : "✓"}
+        </span>
+      ),
+    },
+    {
+      href: "/portal/inbox",
+      label: t("portal.dial.inbox"),
+      body: (
+        <span className={`text-2xl font-black ${unread > 0 ? "text-red-400" : ""}`} dir="ltr">
+          {unread}
+        </span>
+      ),
+    },
+    {
+      href: "#polls",
+      label: t("portal.dial.polls"),
+      body: (
+        <span className={`text-2xl font-black ${pollsToVote > 0 ? "text-gold" : ""}`} dir="ltr">
+          {pollsToVote}
+        </span>
+      ),
+    },
+  ];
+
+  const tabs = [
+    ["#top", "🏠", t("portal.tab.home"), 0],
+    ["#events", "📅", t("portal.tab.events"), 0],
+    ["/portal/inbox", "📬", t("portal.tab.inbox"), unread],
+    ["#payments", "💰", t("portal.tab.pay"), 0],
+    ["#more", "☰", t("portal.tab.more"), 0],
+  ];
+
+  const topLinks = [
+    ["#events", t("portal.tab.events")],
+    ["#polls", t("portal.polls")],
+    ["#payments", t("portal.tab.pay")],
+    ["#attendance", t("portal.dial.attendance")],
+  ];
+
+  const moreLink =
+    "rounded-xl border border-[#1c3a29] bg-[#0a1810] px-4 py-3 text-center text-sm hover:border-gold";
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-white">
-      <header className="border-b border-neutral-800">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-3">
+    <main id="top" className="rl-locker min-h-screen text-white">
+      {/* Top bar */}
+      <header className="sticky top-0 z-30 border-b border-gold/20 bg-[#050d08]/85 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-2.5 pe-36">
           <Link href="/" aria-label="Red Lions">
-            <Logo width={40} />
+            <Logo width={36} />
           </Link>
-          <span className="font-bold tracking-wide" dir="ltr">
+          <span className="font-black" dir="ltr">
             RED <span className="text-red-500">LIONS</span>
           </span>
-          <span className="text-sm text-neutral-500">{t("portal.title")}</span>
-        </div>
-      </header>
-
-      <div className="mx-auto grid max-w-6xl gap-8 px-6 py-8 lg:grid-cols-[260px_1fr]">
-        {/* Side panel */}
-        <aside className="lg:sticky lg:top-8 lg:self-start">
-          <div className="flex items-center gap-4 rounded-2xl border border-neutral-800 bg-neutral-900 p-5 lg:flex-col lg:text-center">
-            <PlayerPhoto
-              player={player}
-              className="h-24 w-24 shrink-0 rounded-2xl border-2 border-gold lg:h-44 lg:w-44"
-            />
-            <div>
-              {me.number && (
-                <div className="text-4xl font-black text-red-600 lg:text-5xl">
-                  {me.number}
-                </div>
-              )}
-              <div className="text-xl font-bold">{player.name}</div>
-              <div className="mt-1 text-sm text-neutral-400">
-                {me.position ? t(`pos.${me.position}`) : t("portal.teamMember")}
-              </div>
-              {me.role === "admin" && (
-                <span className="mt-2 inline-block rounded-md bg-gold px-2 py-0.5 text-xs font-black text-neutral-950">
-                  {t("common.captain")}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <nav className="mt-4 flex flex-wrap gap-2 lg:flex-col">
+          <span className="hidden text-xs font-bold uppercase tracking-[0.25em] text-gold sm:inline">
+            {t("portal.title")}
+          </span>
+          <nav className="ms-auto hidden items-center gap-1 lg:flex">
+            {topLinks.map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                className="rounded-full px-3 py-1.5 text-sm text-neutral-300 hover:bg-white/10 hover:text-white"
+              >
+                {label}
+              </a>
+            ))}
             <Link
               href="/portal/inbox"
-              className={`${navLink} ${
-                unread > 0 ? "!border-red-600 !bg-red-600 font-semibold" : ""
+              className={`rounded-full px-3 py-1.5 text-sm ${
+                unread > 0
+                  ? "bg-red-600 font-semibold"
+                  : "text-neutral-300 hover:bg-white/10 hover:text-white"
               }`}
             >
               {unread > 0 ? t("portal.inboxNew", { n: unread }) : t("portal.inbox")}
             </Link>
-            <Link href="/gallery" className={navLink}>
-              {t("portal.gallery")}
-            </Link>
-            <Link href="/squad" className={navLink}>
-              {t("portal.squad")}
-            </Link>
-            <Link href="/" className={navLink}>
-              {t("portal.publicSite")}
-            </Link>
-            <Link href="/install" className={navLink}>
-              📲 {t("nav.install")}
-            </Link>
-            {me.role === "admin" && (
-              <Link href="/admin" className={`${navLink} !border-gold text-gold`}>
-                {t("portal.dashboard")}
-              </Link>
-            )}
-            <form action={logout} className="contents">
-              <button className={`${navLink} w-full text-start text-neutral-400`}>
-                {t("portal.logout")}
-              </button>
-            </form>
           </nav>
-        </aside>
+        </div>
+      </header>
 
-        {/* Main column */}
-        <div className="min-w-0 space-y-10">
-          <div>
-            <h1 className="text-3xl font-bold">{t("portal.welcome", { name: player.name })}</h1>
-            <p className="mt-1 text-neutral-400">{t("portal.welcomeSub")}</p>
+      {/* Hero: card, ticket and dials */}
+      <section className="relative overflow-hidden">
+        <PitchLines />
+        <div
+          className="pointer-events-none absolute -bottom-6 end-2 select-none text-[34vw] font-black leading-none text-transparent opacity-[0.12] lg:text-[17rem]"
+          style={{ WebkitTextStroke: "2px #d4a017" }}
+          dir="ltr"
+          aria-hidden
+        >
+          {me.number}
+        </div>
+
+        <div className="relative mx-auto grid max-w-6xl gap-8 px-6 py-10 lg:grid-cols-[320px_1fr]">
+          <div className="rl-fade-up">
+            <PlayerCard
+              player={player}
+              number={me.number}
+              position={me.position ? t(`pos.${me.position}`) : t("portal.teamMember")}
+              isCaptain={me.is_captain === 1}
+              stats={pstats}
+              labels={cardLabels}
+            />
           </div>
-          <PushToggle publicKey={process.env.VAPID_PUBLIC_KEY ?? ""} />
 
-          <section>
-            <h2 className="text-xl font-semibold text-red-500">{t("portal.upcoming")}</h2>
-            <div className="mt-4 space-y-3">
-              {events.length === 0 && (
-                <p className="text-neutral-500">{t("portal.noUpcoming")}</p>
-              )}
-              {events.map((e) => (
-                <div
-                  key={e.id}
-                  className="rounded-xl border border-neutral-800 bg-neutral-900 p-5"
-                >
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-xl">{TYPES[e.type].icon}</span>
-                    <span className="text-lg font-semibold">{e.title}</span>
-                    <span className="text-sm text-neutral-400">
-                      {formatWhen(e.starts_at, lang)}
-                    </span>
-                  </div>
-                  {e.location && (
-                    <p className="mt-1 text-sm text-neutral-500">📍 {e.location}</p>
-                  )}
-                  {e.notes && (
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-300">
-                      {e.notes}
-                    </p>
-                  )}
+          <div className="min-w-0">
+            <div className="rl-fade-up rl-d1">
+              <h1 className="text-3xl font-black">
+                {t("portal.welcome", { name: player.name })}
+              </h1>
+              <p className="mt-1 text-neutral-300">{t("portal.welcomeSub")}</p>
+            </div>
 
-                  <form
-                    action={setAttendance}
-                    className="mt-4 flex flex-wrap items-center gap-2"
-                  >
-                    <input type="hidden" name="eventId" value={e.id} />
-                    <input
-                      name="reason"
-                      defaultValue={e.my_reason ?? ""}
-                      placeholder={t("portal.reasonPlaceholder")}
-                      className="w-44 rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-1.5 text-sm outline-none focus:border-red-600"
-                    />
-                    {[
-                      ["yes", t("portal.coming")],
-                      ["maybe", t("portal.maybe")],
-                      ["no", t("portal.cantCome")],
-                    ].map(([value, label]) => (
-                      <button
-                        key={value}
-                        name="status"
-                        value={value}
-                        className={`rounded-lg border px-3 py-1.5 text-sm ${
-                          e.my_status === value
-                            ? "border-red-600 bg-red-600 font-semibold"
-                            : "border-neutral-700 hover:border-red-600"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </form>
+            {/* The matchday ticket */}
+            <div className="rl-fade-up rl-d2 mt-6">
+              <div className="mb-2 text-xs font-black uppercase tracking-[0.25em] text-gold">
+                {t("portal.nextUp")}
+              </div>
 
-                  {e.type === "match" && e.lineup_published === 1 && (
-                    <details className="mt-4" open>
-                      <summary className="cursor-pointer text-sm font-semibold text-red-500">
-                        {t("portal.lineup", { formation: e.formation })}
-                      </summary>
-                      <div className="mt-3">
-                        <Pitch
-                          formation={e.formation}
-                          slotIds={JSON.parse(e.lineup)}
-                          playersById={playersById}
-                        />
-                        {JSON.parse(e.bench).length > 0 && (
-                          <p className="mt-3 text-sm text-neutral-300">
-                            <span className="text-neutral-500">{t("portal.bench")} </span>
-                            {JSON.parse(e.bench)
-                              .map((id) =>
-                                playersById[id]
-                                  ? `${playersById[id].number} ${playersById[id].name}`
-                                  : null
-                              )
-                              .filter(Boolean)
-                              .join(" · ")}
+              {next ? (
+                <>
+                  <div className="drop-shadow-2xl">
+                    <div
+                      className="rl-ticket relative bg-[#f6efdc] text-neutral-900"
+                      style={{ "--stub": "140px" }}
+                    >
+                      <div className="p-6 pb-5">
+                        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-neutral-500">
+                          <span>
+                            {TYPES[next.type].icon} {t(`portal.type.${next.type}`)}
+                          </span>
+                          <span className="rounded-full bg-red-600 px-2 py-0.5 text-white">
+                            {t("portal.nextUp")}
+                          </span>
+                        </div>
+                        <h3 className="mt-3 text-2xl font-black leading-tight">{next.title}</h3>
+                        <p className="mt-1 font-semibold text-neutral-700">
+                          {formatWhen(next.starts_at, lang)}
+                        </p>
+                        {next.location && (
+                          <p className="text-sm text-neutral-600">📍 {next.location}</p>
+                        )}
+                        {next.notes && (
+                          <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-600">
+                            {next.notes}
                           </p>
                         )}
+                        <div className="mt-4">
+                          <Countdown startsAt={next.starts_at} light />
+                        </div>
                       </div>
-                    </details>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-red-500">{t("portal.polls")}</h2>
-            <div className="mt-4 space-y-3">
-              {polls.length === 0 && (
-                <p className="text-neutral-500">{t("portal.noPolls")}</p>
-              )}
-              {polls.map((poll) => {
-                const question =
-                  poll.kind === "motm" && poll.event_id && eventTitles[poll.event_id]
-                    ? t("portal.motmQuestion", { title: eventTitles[poll.event_id] })
-                    : poll.question;
-
-                return (
-                  <div
-                    key={poll.id}
-                    className="rounded-xl border border-neutral-800 bg-neutral-900 p-5"
-                  >
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-lg font-semibold">{question}</span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs ${
-                          poll.closed
-                            ? "bg-neutral-700 text-neutral-300"
-                            : "bg-green-900 text-green-300"
-                        }`}
+                      <div
+                        className="border-t-2 border-dashed border-neutral-400/70 px-6 pt-3"
+                        style={{ minHeight: "var(--stub)" }}
                       >
-                        {poll.closed
-                          ? t("portal.closed")
-                          : poll.closes_at
-                          ? t("portal.voteBefore", { when: formatWhen(poll.closes_at, lang) })
-                          : t("portal.open")}
-                      </span>
-                    </div>
-
-                    {!poll.closed && (
-                      <form action={vote} className="mt-4 flex flex-wrap gap-2">
-                        <input type="hidden" name="pollId" value={poll.id} />
-                        {poll.options.map((o) => {
-                          const isSelf =
-                            poll.kind === "motm" && o.player_id === me.player_id;
-                          return (
-                            <button
-                              key={o.id}
-                              name="optionId"
-                              value={o.id}
-                              disabled={isSelf}
-                              title={isSelf ? t("portal.cantVoteSelf") : undefined}
-                              className={`rounded-lg border px-4 py-2 text-sm ${
-                                isSelf
-                                  ? "cursor-not-allowed border-neutral-800 text-neutral-600"
-                                  : poll.myVote === o.id
-                                  ? "border-red-600 bg-red-600 font-semibold"
-                                  : "border-neutral-700 hover:border-red-600"
-                              }`}
-                            >
-                              {o.label}
-                            </button>
-                          );
-                        })}
-                      </form>
-                    )}
-
-                    {!poll.closed && poll.myVote && (
-                      <p className="mt-2 text-xs text-neutral-500">{t("portal.canChange")}</p>
-                    )}
-                    {!poll.closed && !poll.myVote && (
-                      <p className="mt-2 text-xs text-neutral-500">{t("portal.resultsAfter")}</p>
-                    )}
-
-                    {(poll.closed || poll.myVote) && (
-                      <div className="mt-4 space-y-3">
-                        {poll.options.map((o) => {
-                          const pct = poll.total
-                            ? Math.round((100 * o.count) / poll.total)
-                            : 0;
-                          return (
-                            <div key={o.id}>
-                              <div className="flex items-center justify-between text-sm">
-                                <span>{o.label}</span>
-                                <span className="text-neutral-400" dir="ltr">
-                                  {o.count} · {pct}%
-                                </span>
-                              </div>
-                              <div className="mt-1 h-2 overflow-hidden rounded-full bg-neutral-800">
-                                <div
-                                  className="h-full bg-red-600"
-                                  style={{ width: `${pct}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                        <p className="text-xs text-neutral-500">
-                          {t("portal.votesCount", { n: poll.total })}
-                        </p>
+                        {rsvp(next, true)}
                       </div>
-                    )}
+                    </div>
                   </div>
+                  {lineup(next) && <div className={`${panel} mt-4`}>{lineup(next)}</div>}
+                </>
+              ) : (
+                <div className={panel}>
+                  <p className="text-neutral-300">{t("portal.nothingNext")}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Dials */}
+            <div className="rl-fade-up rl-d3 mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {dials.map((d) => {
+                const Tag = d.href.startsWith("#") ? "a" : Link;
+                return (
+                  <Tag
+                    key={d.label}
+                    href={d.href}
+                    className="rl-tile flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#1c3a29] bg-[#0a1810] px-3 py-4 text-center hover:border-gold"
+                  >
+                    {d.body}
+                    <span className="text-xs font-semibold text-neutral-300">{d.label}</span>
+                  </Tag>
                 );
               })}
             </div>
-          </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-red-500">{t("portal.attendance")}</h2>
-            <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
+            <div className="rl-fade-up rl-d4 mt-4">
+              <PushToggle publicKey={process.env.VAPID_PUBLIC_KEY ?? ""} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Sections */}
+      <div className="mx-auto max-w-6xl space-y-12 px-6 pb-28 pt-4 lg:pb-16">
+        <section className="space-y-4">
+          <SectionTitle id="events">{t("portal.later")}</SectionTitle>
+          {later.length === 0 && (
+            <p className="text-neutral-400">{t("portal.laterEmpty")}</p>
+          )}
+          <div className="grid gap-4 lg:grid-cols-2">
+            {later.map((e) => (
+              <div key={e.id} className={panel}>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-xl">{TYPES[e.type].icon}</span>
+                  <span className="text-lg font-bold">{e.title}</span>
+                </div>
+                <p className="mt-1 text-sm text-neutral-300">{formatWhen(e.starts_at, lang)}</p>
+                {e.location && <p className="text-sm text-neutral-400">📍 {e.location}</p>}
+                {e.notes && (
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-300">{e.notes}</p>
+                )}
+                <div className="mt-4">{rsvp(e)}</div>
+                {lineup(e)}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <SectionTitle id="polls">{t("portal.polls")}</SectionTitle>
+          {polls.length === 0 && <p className="text-neutral-400">{t("portal.noPolls")}</p>}
+          <div className="grid gap-4 lg:grid-cols-2">
+            {polls.map((poll) => {
+              const question =
+                poll.kind === "motm" && poll.event_id && eventTitles[poll.event_id]
+                  ? t("portal.motmQuestion", { title: eventTitles[poll.event_id] })
+                  : poll.question;
+
+              return (
+                <div key={poll.id} className={panel}>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-lg font-bold">{question}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs ${
+                        poll.closed
+                          ? "bg-neutral-700 text-neutral-300"
+                          : "bg-green-900 text-green-300"
+                      }`}
+                    >
+                      {poll.closed
+                        ? t("portal.closed")
+                        : poll.closes_at
+                        ? t("portal.voteBefore", { when: formatWhen(poll.closes_at, lang) })
+                        : t("portal.open")}
+                    </span>
+                  </div>
+
+                  {!poll.closed && (
+                    <form action={vote} className="mt-4 flex flex-wrap gap-2">
+                      <input type="hidden" name="pollId" value={poll.id} />
+                      {poll.options.map((o) => {
+                        const isSelf = poll.kind === "motm" && o.player_id === me.player_id;
+                        return (
+                          <button
+                            key={o.id}
+                            name="optionId"
+                            value={o.id}
+                            disabled={isSelf}
+                            title={isSelf ? t("portal.cantVoteSelf") : undefined}
+                            className={`rounded-lg border px-4 py-2 text-sm ${
+                              isSelf
+                                ? "cursor-not-allowed border-neutral-800 text-neutral-600"
+                                : poll.myVote === o.id
+                                ? "border-red-600 bg-red-600 font-semibold"
+                                : "border-neutral-700 hover:border-red-600"
+                            }`}
+                          >
+                            {o.label}
+                          </button>
+                        );
+                      })}
+                    </form>
+                  )}
+
+                  {!poll.closed && poll.myVote && (
+                    <p className="mt-2 text-xs text-neutral-400">{t("portal.canChange")}</p>
+                  )}
+                  {!poll.closed && !poll.myVote && (
+                    <p className="mt-2 text-xs text-neutral-400">{t("portal.resultsAfter")}</p>
+                  )}
+
+                  {(poll.closed || poll.myVote) && (
+                    <div className="mt-4 space-y-3">
+                      {poll.options.map((o) => {
+                        const pct = poll.total ? Math.round((100 * o.count) / poll.total) : 0;
+                        return (
+                          <div key={o.id}>
+                            <div className="flex items-center justify-between text-sm">
+                              <span>{o.label}</span>
+                              <span className="text-neutral-400" dir="ltr">
+                                {o.count} · {pct}%
+                              </span>
+                            </div>
+                            <div className="mt-1 h-2 overflow-hidden rounded-full bg-neutral-800">
+                              <div
+                                className="h-full bg-gradient-to-r from-red-600 to-emerald-500"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <p className="text-xs text-neutral-400">
+                        {t("portal.votesCount", { n: poll.total })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <div className="grid gap-12 lg:grid-cols-2">
+          <section className="space-y-4">
+            <SectionTitle id="attendance">{t("portal.attendance")}</SectionTitle>
+            <div className={panel}>
               {!mine.summary ? (
-                <p className="text-neutral-500">{t("portal.attendanceEmpty")}</p>
+                <p className="text-neutral-400">{t("portal.attendanceEmpty")}</p>
               ) : (
                 <>
-                  <div className="flex flex-wrap items-end gap-8">
-                    <div>
-                      <div
-                        className={`text-5xl font-black ${rateColor(mine.summary.rate)}`}
-                        dir="ltr"
-                      >
-                        {mine.summary.rate}%
+                  <div className="flex flex-wrap items-center gap-6">
+                    <Ring
+                      value={mine.summary.rate}
+                      color={ringColor(mine.summary.rate)}
+                      size={92}
+                      stroke={9}
+                    >
+                      <span className="text-xl">{mine.summary.rate}%</span>
+                    </Ring>
+                    <div className="grid flex-1 grid-cols-3 gap-3 text-center">
+                      <div>
+                        <div className="text-xl font-black" dir="ltr">
+                          {mine.summary.attended}/{mine.summary.events}
+                        </div>
+                        <div className="text-[11px] text-neutral-400">
+                          {t("portal.eventsAttended")}
+                        </div>
                       </div>
-                      <div className="text-xs text-neutral-400">{t("portal.rate")}</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold" dir="ltr">
-                        {mine.summary.attended}/{mine.summary.events}
+                      <div>
+                        <div className="text-xl font-black" dir="ltr">
+                          {mine.summary.responseRate}%
+                        </div>
+                        <div className="text-[11px] text-neutral-400">
+                          {t("portal.repliesGiven")}
+                        </div>
                       </div>
-                      <div className="text-xs text-neutral-400">
-                        {t("portal.eventsAttended")}
+                      <div>
+                        <div
+                          className={`text-xl font-black ${
+                            mine.summary.no_shows > 0 ? "text-red-400" : ""
+                          }`}
+                        >
+                          {mine.summary.no_shows}
+                        </div>
+                        <div className="text-[11px] text-neutral-400">{t("portal.noShows")}</div>
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold" dir="ltr">
-                        {mine.summary.responseRate}%
-                      </div>
-                      <div className="text-xs text-neutral-400">
-                        {t("portal.repliesGiven")}
-                      </div>
-                    </div>
-                    <div>
-                      <div
-                        className={`text-2xl font-bold ${
-                          mine.summary.no_shows > 0 ? "text-red-400" : ""
-                        }`}
-                      >
-                        {mine.summary.no_shows}
-                      </div>
-                      <div className="text-xs text-neutral-400">{t("portal.noShows")}</div>
                     </div>
                   </div>
 
@@ -437,22 +619,22 @@ export default async function PortalPage() {
             </div>
           </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-red-500">{t("portal.payments")}</h2>
-            <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
+          <section className="space-y-4">
+            <SectionTitle id="payments">{t("portal.payments")}</SectionTitle>
+            <div className={panel}>
               {money.open.length === 0 ? (
-                <p className="text-neutral-400">{t("portal.noDebt")}</p>
+                <p className="text-neutral-300">{t("portal.noDebt")}</p>
               ) : (
                 <>
                   <div className="flex items-end gap-3">
-                    <div className="text-4xl font-black text-red-500" dir="ltr">
+                    <div className="text-4xl font-black text-red-400" dir="ltr">
                       {formatMoney(money.outstanding)}
                     </div>
                     <div className="pb-1 text-sm text-neutral-400">{t("portal.toPay")}</div>
                   </div>
 
                   {payInfo && (
-                    <p className="mt-3 whitespace-pre-wrap rounded-lg border border-neutral-800 bg-neutral-950 p-3 text-sm text-neutral-300">
+                    <p className="mt-3 whitespace-pre-wrap rounded-lg border border-[#1c3a29] bg-[#050d08] p-3 text-sm text-neutral-300">
                       <span className="text-neutral-500">{t("portal.howToPay")} </span>
                       {payInfo}
                     </p>
@@ -462,7 +644,7 @@ export default async function PortalPage() {
                     {money.open.map((m) => (
                       <div
                         key={m.id}
-                        className="rounded-lg border border-neutral-800 bg-neutral-950 p-4"
+                        className="rounded-lg border border-[#1c3a29] bg-[#050d08] p-4"
                       >
                         <div className="flex flex-wrap items-center gap-3">
                           <span className="text-xl">{CATEGORIES[m.category].icon}</span>
@@ -531,46 +713,85 @@ export default async function PortalPage() {
               )}
             </div>
           </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-red-500">
-              {t("portal.announcements")}
-            </h2>
-            <div className="mt-4 space-y-3">
-              {announcements.length === 0 && (
-                <p className="text-neutral-500">{t("portal.noAnnouncements")}</p>
-              )}
-              {announcements.map((a) => (
-                <article
-                  key={a.id}
-                  className="rounded-xl border border-neutral-800 bg-neutral-900 p-5"
-                >
-                  <div className="flex items-center gap-2 text-xs text-neutral-500">
-                    <span dir="ltr">{a.created_at.slice(0, 10)}</span>
-                    {a.visibility === "players" && (
-                      <span className="rounded-full bg-yellow-900 px-2 py-0.5 text-yellow-300">
-                        {t("common.playersOnly")}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="mt-1 text-lg font-semibold">{a.title}</h3>
-                  {a.kind === "teams" && a.data ? (
-                    <div className="mt-4">
-                      <TeamCards
-                        teams={JSON.parse(a.data).teams}
-                        labels={teamLabels}
-                        inner
-                      />
-                    </div>
-                  ) : (
-                    <p className="mt-2 whitespace-pre-wrap text-neutral-300">{a.body}</p>
-                  )}
-                </article>
-              ))}
-            </div>
-          </section>
         </div>
+
+        <section className="space-y-4">
+          <SectionTitle id="announcements">{t("portal.announcements")}</SectionTitle>
+          {announcements.length === 0 && (
+            <p className="text-neutral-400">{t("portal.noAnnouncements")}</p>
+          )}
+          <div className="space-y-3">
+            {announcements.map((a) => (
+              <article key={a.id} className={panel}>
+                <div className="flex items-center gap-2 text-xs text-neutral-500">
+                  <span dir="ltr">{a.created_at.slice(0, 10)}</span>
+                  {a.visibility === "players" && (
+                    <span className="rounded-full bg-yellow-900 px-2 py-0.5 text-yellow-300">
+                      {t("common.playersOnly")}
+                    </span>
+                  )}
+                </div>
+                <h3 className="mt-1 text-lg font-bold">{a.title}</h3>
+                {a.kind === "teams" && a.data ? (
+                  <div className="mt-4">
+                    <TeamCards teams={JSON.parse(a.data).teams} labels={teamLabels} inner />
+                  </div>
+                ) : (
+                  <p className="mt-2 whitespace-pre-wrap text-neutral-300">{a.body}</p>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <SectionTitle id="more">{t("portal.more")}</SectionTitle>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <Link href="/gallery" className={moreLink}>
+              {t("portal.gallery")}
+            </Link>
+            <Link href="/squad" className={moreLink}>
+              {t("portal.squad")}
+            </Link>
+            <Link href="/install" className={moreLink}>
+              📲 {t("nav.install")}
+            </Link>
+            <Link href="/" className={moreLink}>
+              {t("portal.publicSite")}
+            </Link>
+            {me.role === "admin" && (
+              <Link href="/admin" className={`${moreLink} !border-gold text-gold`}>
+                {t("portal.dashboard")}
+              </Link>
+            )}
+            <form action={logout} className="contents">
+              <button className={`${moreLink} text-neutral-400`}>{t("portal.logout")}</button>
+            </form>
+          </div>
+        </section>
       </div>
+
+      {/* Phone-app tab bar */}
+      <nav className="rl-tabbar fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-gold/30 bg-[#050d08]/95 backdrop-blur lg:hidden">
+        {tabs.map(([href, icon, label, badge]) => {
+          const Tag = href.startsWith("#") ? "a" : Link;
+          return (
+            <Tag
+              key={label}
+              href={href}
+              className="relative flex flex-col items-center gap-0.5 py-2 text-[11px] text-neutral-300 active:text-gold"
+            >
+              <span className="text-xl leading-none">{icon}</span>
+              {label}
+              {badge > 0 && (
+                <span className="absolute end-1/4 top-1 rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white">
+                  {badge}
+                </span>
+              )}
+            </Tag>
+          );
+        })}
+      </nav>
     </main>
   );
 }
