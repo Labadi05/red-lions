@@ -27,11 +27,6 @@ export default async function AdminTeamsPage({ searchParams }) {
     )
     .all(eventId ?? 0);
 
-  // With an event: only the players who said "Coming". Without: everyone.
-  const initialSelected = eventId
-    ? players.filter((p) => p.status === "yes").map((p) => p.id)
-    : players.map((p) => p.id);
-
   const pill = (active) =>
     `rounded-full border px-4 py-1.5 text-sm ${
       active ? "border-red-600 bg-red-600 font-semibold" : "border-neutral-700 hover:border-red-600"
@@ -43,16 +38,16 @@ export default async function AdminTeamsPage({ searchParams }) {
         <Link href="/admin" className="text-sm text-red-400 hover:underline">
           ← Dashboard
         </Link>
-        <h1 className="mt-4 text-4xl font-bold">Team split 🔀</h1>
+        <h1 className="mt-4 text-4xl font-bold">Teams 🔀</h1>
         <p className="mt-2 text-neutral-400">
-          Random, balanced teams for internal games or penalty shootouts. One goalkeeper per
-          team, and defenders, midfielders and forwards shared out evenly.
+          Pick the teams yourself for an internal game or a penalty shootout. Only the penalty
+          shooting order can be shuffled at random.
         </p>
 
-        <p className="mt-6 text-sm text-neutral-400">Pre-fill the players from:</p>
+        <p className="mt-6 text-sm text-neutral-400">Show who said they are coming for:</p>
         <div className="mt-2 flex flex-wrap gap-2">
           <Link href="/admin/teams" className={pill(!eventId)}>
-            Everyone
+            Nobody in particular
           </Link>
           {events.map((e) => (
             <Link key={e.id} href={`/admin/teams?event=${e.id}`} className={pill(eventId === e.id)}>
@@ -60,18 +55,9 @@ export default async function AdminTeamsPage({ searchParams }) {
             </Link>
           ))}
         </div>
-        {eventId && (
-          <p className="mt-2 text-xs text-neutral-500">
-            Only players who said &quot;Coming&quot; are ticked. You can change it below.
-          </p>
-        )}
 
         <div className="mt-6">
-          <TeamSplitter
-            key={eventId ?? "all"}
-            players={players}
-            initialSelected={initialSelected}
-          />
+          <TeamSplitter key={eventId ?? "none"} players={players} hasEvent={Boolean(eventId)} />
         </div>
       </div>
     </main>
