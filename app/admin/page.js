@@ -72,6 +72,10 @@ export default async function AdminPage({ searchParams }) {
             🔀 Teams
           </Link>
 
+                    <Link href="/admin/tactics" className={linkStyle}>
+            🧠 Tactics
+          </Link>
+
            <Link href="/admin/squad" className={linkStyle}>
             👥 Squad
           </Link>
