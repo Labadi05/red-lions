@@ -59,7 +59,7 @@ Each player has an individual account created by the captain.
 - **Messages**: send messages, tasks, to-dos, punishments or rewards to everyone or selected players, with due dates, and see who has seen or completed them.
 - **Player feedback**: review suggestions and problems, set a status (new, reviewed, planned, not for now) and reply.
 - **Money tracker**: charges for pitch rental, water, fines, equipment and more; same amount per player or a total split with exact cents; per-player paid/unpaid, confirm "I've paid" claims, who owes what, a reminder to copy, and the payment instructions shown to players.
-- **Team split**: random balanced teams (2 to 4) for internal games or penalty shootouts, with one goalkeeper per team and positions shared evenly, per-player position override for the day, optional random shooting order, copy for WeChat or post to the players' portal.
+- **Teams**: build 2 to 4 teams by hand for internal games or penalty shootouts (with a per-player position override for the day), see them live, shuffle only the penalty shooting order, copy for WeChat or post to the players' portal.
 - **Gallery manager**: upload photos (up to 10 at a time) and video clips, add video links, switch items between public and players-only, delete.
 - **Site info**: social links, contact details, team story and payment details.
 - **Security log**: failed login attempts from the last 7 days.
