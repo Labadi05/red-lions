@@ -13,6 +13,7 @@ export default function Logo({ width = 96, priority = false, className = "" }) {
       height={height}
       priority={priority}
       className={className}
+      style={{ height: "auto" }}
     />
   );
 }
