@@ -44,6 +44,7 @@ Each player has an individual account created by the captain.
 - **Inbox**: private messages, tasks, to-dos, punishments and rewards from the captain, with "mark as done" and an unread badge. Players can also write suggestions, messages or problems to the captain, follow their status and read the captain's reply.
 - **Gallery**: includes the players-only photos and clips.
 -  **Phone notifications**: players can turn on alerts for new announcements, events and schedule changes, polls, lineups, messages and tasks, payments and replies to their suggestions. Alerts never include private amounts.
+- **Tactics**: the captain's formations, set pieces and plays, with arrows, notes and step-by-step animation (Play button), plus a tactic attached to the next match.
 
 ## Captain's dashboard
 
@@ -64,6 +65,7 @@ Each player has an individual account created by the captain.
 - **Site info**: social links, contact details, team story and payment details.
 - **Security log**: failed login attempts from the last 7 days.
 - **Notify**: send a custom alert to everyone or selected players, and see how many players have notifications on.
+- **Tactics board**: build formations and plays on a pitch (drag players, arrows, text, undo/redo, animated steps), attach them to a match, save as an image for WeChat, and show them to players.
 
 ## Security and privacy
 
