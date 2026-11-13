@@ -19,6 +19,8 @@ import Ring from "@/components/portal/Ring";
 import { logout } from "../login/actions";
 import { setAttendance, vote, claimPaid } from "./actions";
 import VoteForm from "@/components/portal/VoteForm";
+import BoardSvg from "@/components/tactics/BoardSvg";
+import { CATEGORIES as TACTIC_CATEGORIES, cleanBoard } from "@/lib/tacticsData";
 
 export const dynamic = "force-dynamic";
 
@@ -120,6 +122,18 @@ export default async function PortalPage() {
 
   const playersById = Object.fromEntries(
     db.prepare("SELECT id, number, name FROM players").all().map((p) => [p.id, p])
+  );
+
+    const tacticRows = db
+    .prepare(
+      "SELECT id, title, category, event_id, data FROM tactics WHERE published = 1 ORDER BY id DESC LIMIT 30"
+    )
+    .all();
+  const tactics = tacticRows
+    .map((r) => ({ ...r, board: cleanBoard(r.data) }))
+    .filter((r) => r.board);
+  const tacticByEvent = Object.fromEntries(
+    tactics.filter((x) => x.event_id).map((x) => [x.event_id, x])
   );
 
   const teamLabels = {
@@ -392,6 +406,15 @@ export default async function PortalPage() {
                     </div>
                   </div>
                   {lineup(next) && <div className={`${panel} mt-4`}>{lineup(next)}</div>}
+                    {tacticByEvent[next.id] && (
+                    <Link
+                      href={`/portal/tactics/${tacticByEvent[next.id].id}`}
+                      className="mt-4 flex items-center gap-3 rounded-2xl border border-gold/60 bg-[#0a1810] px-4 py-3 text-sm font-semibold hover:bg-[#12301f]"
+                    >
+                      🧠 {t("portal.tacticFor")}:{" "}
+                      <span className="text-gold">{tacticByEvent[next.id].title}</span>
+                    </Link>
+                  )}
                 </>
               ) : (
                 <div className={panel}>
@@ -445,6 +468,15 @@ export default async function PortalPage() {
                 )}
                 <div className="mt-4">{rsvp(e)}</div>
                 {lineup(e)}
+                   {tacticByEvent[e.id] && (
+                  <Link
+                    href={`/portal/tactics/${tacticByEvent[e.id].id}`}
+                    className="mt-4 flex items-center gap-2 rounded-xl border border-gold/60 px-4 py-2.5 text-sm font-semibold hover:bg-[#12301f]"
+                  >
+                    🧠 {t("portal.tacticFor")}:{" "}
+                    <span className="text-gold">{tacticByEvent[e.id].title}</span>
+                  </Link>
+                )}
               </div>
             ))}
           </div>
@@ -545,6 +577,41 @@ export default async function PortalPage() {
                 </div>
               );
             })}
+          </div>
+        </section>
+        
+                <section className="space-y-4">
+          <SectionTitle id="tactics">{t("portal.tactics")}</SectionTitle>
+          {tactics.length === 0 && (
+            <p className="text-neutral-400">{t("portal.tacticsEmpty")}</p>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {tactics.map((x) => (
+              <Link
+                key={x.id}
+                href={`/portal/tactics/${x.id}`}
+                className="rl-tile flex gap-4 rounded-2xl border border-[#1c3a29] bg-[#0a1810] p-4 hover:border-gold"
+              >
+                <div className="w-20 shrink-0 overflow-hidden rounded-lg border border-neutral-700">
+                  <BoardSvg
+                    items={x.board.items}
+                    positions={x.board.frames[0].pos}
+                    draw={x.board.frames[0].draw}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold">{x.title}</div>
+                  <div className="mt-1 text-xs text-neutral-400">
+                    {TACTIC_CATEGORIES[x.category]?.icon} {t(`tactic.cat.${x.category}`)}
+                  </div>
+                  {x.board.frames.length > 1 && (
+                    <div className="mt-1 text-xs font-semibold text-gold">
+                      ▶ {t("tactic.steps", { n: x.board.frames.length })}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ))}
           </div>
         </section>
         

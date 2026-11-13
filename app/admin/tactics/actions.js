@@ -4,11 +4,24 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import db from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { sendPush } from "@/lib/push";
 import { CATEGORIES, cleanBoard } from "@/lib/tacticsData";
 
 function refresh() {
   revalidatePath("/admin/tactics");
   revalidatePath("/portal");
+}
+
+// Phone alert: only when a tactic becomes visible to players
+function notify(id, title) {
+  void sendPush({
+    build: (t) => ({
+      title: t("push.tactic"),
+      body: title,
+      url: `/portal/tactics/${id}`,
+      tag: `tactic-${id}`,
+    }),
+  }).catch(() => {});
 }
 
 export async function saveTactic(prevState, formData) {
@@ -38,12 +51,21 @@ export async function saveTactic(prevState, formData) {
   const json = JSON.stringify(board);
 
   if (id) {
+    const before = db.prepare("SELECT published FROM tactics WHERE id = ?").get(id);
+
     db.prepare(
       `UPDATE tactics SET title = ?, category = ?, notes = ?, data = ?, event_id = ?,
          published = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
     ).run(title, category, notes, json, eventId, published, id);
+
+    if (published && before && !before.published) notify(id, title);
+
     refresh();
-    return { ok: published ? "Saved ✓ Players can see it." : "Saved ✓ (draft, players can't see it yet)." };
+    return {
+      ok: published
+        ? "Saved ✓ Players can see it."
+        : "Saved ✓ (draft, players can't see it yet).",
+    };
   }
 
   const result = db
@@ -52,16 +74,25 @@ export async function saveTactic(prevState, formData) {
        VALUES (?, ?, ?, ?, ?, ?)`
     )
     .run(title, category, notes, json, eventId, published);
+  const newId = Number(result.lastInsertRowid);
+
+  if (published) notify(newId, title);
 
   refresh();
-  redirect(`/admin/tactics/${result.lastInsertRowid}`);
+  redirect(`/admin/tactics/${newId}`);
 }
 
 export async function setTacticPublished(formData) {
   await requireAdmin();
   const id = Number(formData.get("id"));
   const published = formData.get("published") === "1" ? 1 : 0;
+
+  const before = db.prepare("SELECT published, title FROM tactics WHERE id = ?").get(id);
+  if (!before) return;
+
   db.prepare("UPDATE tactics SET published = ? WHERE id = ?").run(published, id);
+  if (published && !before.published) notify(id, before.title);
+
   refresh();
 }
 
